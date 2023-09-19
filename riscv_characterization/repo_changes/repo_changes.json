@@ -1,0 +1,198 @@
+{
+  "nemo": {
+    "git": "https://github.com/pulp-platform/nemo.git",
+    "commit": "ed32239efaa256cea061a5426d0c1507c5f005ee",
+    "file_list": {
+      "file_0": {
+        "name": "graph.py",
+        "path": "nemo/"
+      },
+      "file_1": {
+        "name": "transform.py",
+        "path": "nemo/"
+      },
+      "file_2": {
+        "name": "utils.py",
+        "path": "nemo/"
+      },
+      "file_3": {
+        "name": "pact.py",
+        "path": "nemo/quant/"
+      },
+      "file_4": {
+        "name": "deploy.py",
+        "path": "nemo/trans/"
+      },
+      "file_5": {
+        "name": "export.py",
+        "path": "nemo/trans/"
+      },
+      "file_6": {
+        "name": "utils.py",
+        "path": "nemo/trans/"
+      }
+    }
+  },
+  "dory": {
+    "git": "https://github.com/pulp-platform/dory.git",
+    "commit": "0e9011e752476c66c12770cfd283f826bdd5428a",
+    "file_list": {
+      "file_0": {
+        "name": "network_generate.py",
+        "path": "dory/"
+      },
+      "file_1": {
+        "name": "Parser.py",
+        "path": "dory/Frontend_frameworks/NEMO/"
+      },
+      "file_2": {
+        "name": "Pattern_rewriter.py",
+        "path": "dory/Frontend_frameworks/NEMO/"
+      },
+      "file_3": {
+        "name": "DORY_node.py",
+        "path": "dory/Parsers/"
+      },
+      "file_4": {
+        "name": "Layer_node.py",
+        "path": "dory/Parsers/"
+      },
+      "file_5": {
+        "name": "Parser_ONNX_to_DORY.py",
+        "path": "dory/Parsers/"
+      },
+      "file_6": {
+        "name": "Layer2D_template_writer.py",
+        "path": "dory/Utils/Templates_writer/"
+      },
+      "file_7": {
+        "name": "C_Parser.py",
+        "path": "dory/Hardware_targets/PULP/Common"
+      },
+      "file_8": {
+        "name": "HW_description.json",
+        "path": "dory/Hardware_targets/PULP/PULP_gvsoc/"
+      },
+      "file_9": {
+        "name": "layer_L2_c_conv_template.c",
+        "path": "dory/Hardware_targets/PULP/PULP_gvsoc/Templates/layer_templates/"
+      },
+      "file_10": {
+        "name": "pulp_nn_conv_Ho_parallel.c",
+        "path": "dory/Hardware_targets/PULP/Backend_Kernels/pulp-nn/32bit/src/"
+      },
+      "file_11": {
+        "name": "pulp_nn_linear.c",
+        "path": "dory/Hardware_targets/PULP/Backend_Kernels/pulp-nn/32bit/src/"
+      },
+      "file_12": {
+        "name": "pulp_nn_linear_out_32.c",
+        "path": "dory/Hardware_targets/PULP/Backend_Kernels/pulp-nn/32bit/src/"
+      }
+    }
+  },
+  "pulp-riscv-gnu-toolchain": {
+    "git": "https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git",
+    "commit": "49dea1915979fdf91eb2ad4a8873e4cd88a6b811",
+    "file_list": {
+      "file_0": {
+        "name": "riscv-opc.h",
+        "path": "riscv-binutils-gbd/include/opcode/"
+      }
+    }
+  },
+  "cv32e40p": {
+    "git": "https://github.com/pulp-platform/cv32e40p.git",
+    "commit": "8d58109ab61e1fb6c9dcbafefb8f3a56ee596427",
+    "file_list": {
+      "file_0": {
+        "name": "riscv_defines.sv",
+        "path": "rtl/include/"
+      },
+      "file_1": {
+        "name": "riscv_core.sv",
+        "path": "rtl/"
+      },
+      "file_2": {
+        "name": "riscv_id_stage.sv",
+        "path": "rtl/"
+      },
+      "file_3": {
+        "name": "riscv_ex_stage.sv",
+        "path": "rtl/"
+      },
+      "file_4": {
+        "name": "riscv_decoder.sv",
+        "path": "rtl/"
+      },
+      "file_5": {
+        "name": "riscv_cs_register.sv",
+        "path": "rtl/"
+      },
+      "file_6": {
+        "name": "riscv_alu_approx.sv",
+        "path": "rtl/"
+      }
+    }
+  },
+  "pulp": {
+    "git": "https://github.com/pulp-platform/pulp.git",
+    "commit": "b6ae54700b76395b049742ebfc52c5aaf6e148a5",
+    "file_list": {
+      "file_0": {
+        "name": "tb_pulp",
+        "path": "rtl/tb/"
+      },
+      "file_1": {
+        "name": "compile.tcl",
+        "path": "rtl/tb/"
+      },
+      "file_2": {
+        "name": "vsim.tcl",
+        "path": "sim/tcl_files/config/"
+      },
+      "file_3": {
+        "name": "export_vcd.tcl",
+        "path": "sim/tcl_files/config/"
+      }
+    }
+  },
+  "pulp-sdk": {
+    "git": "https://github.com/pulp-platform/pulp-sdk.git",
+    "commit": "8b84cbb30604aa01cf0824855d98e55f0d43d7ce",
+    "file_list": {
+      "file_0": {
+        "name": "common.sh",
+        "path": "configs/"
+      },
+      "file_1": {
+        "name": "default_rules.mk",
+        "path": "rtos/pulpos/common/rules/pulpos/"
+      },
+      "file_2": {
+        "name": "hyperflash.json",
+        "path": "tools/gap-configs/configs/devices/"
+      },
+      "file_3": {
+        "name": "rtl.json",
+        "path": "tools/gapy/configs/platforms/"
+      },
+      "file_4": {
+        "name": "gen_flash_image.py",
+        "path": "tools/gapy/"
+      },
+      "file_5": {
+        "name": "flash.mk",
+        "path": "tools/gapy/rules/"
+      },
+      "file_6": {
+        "name": "rtl_runner.py",
+        "path": "tools/gapy/runner/rtl/"
+      },
+      "file_7": {
+        "name": "pulp.json",
+        "path": "tools/gapy/targets/"
+      }
+    }
+  }
+}

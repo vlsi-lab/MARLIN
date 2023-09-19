@@ -1,4 +1,6 @@
 __pycache__/
 .idea/
 *.pth
-
+!neural_networks/models/.gitkeep
+!neural_networks/adapt/cpu-kernels-8x8/axx_mults_8x8/.gitkeep
+!neural_networks/adapt/cpu-kernels-9x9/axx_mults_9x9/.gitkeep

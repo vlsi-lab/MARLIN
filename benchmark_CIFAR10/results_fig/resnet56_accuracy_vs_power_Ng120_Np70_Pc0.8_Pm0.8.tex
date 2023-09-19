@@ -1,0 +1,76 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{green01270}{RGB}{0,127,0}
+\definecolor{lightgray204}{RGB}{204,204,204}
+
+\begin{axis}[
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.97)},
+  anchor=north west,
+  draw=lightgray204
+},
+tick align=outside,
+tick pos=left,
+title={Accuracy vs normalized dynamic power: resnet56},
+x grid style={darkgray176},
+xlabel={Accuracy},
+xmajorgrids,
+xmin=0.91347, xmax=0.92953,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Normalized Dynamic Power},
+ymajorgrids,
+ymin=0.766701109979713, ymax=0.849156679736642,
+ytick style={color=black}
+]
+\addplot [blue, mark=+, mark size=3, mark options={solid}, only marks]
+table {%
+0.9265 0.845408699293145
+0.9271 0.834405495471781
+0.9231 0.782827128074002
+0.9233 0.781860203996466
+0.9245 0.788177807634873
+0.9243 0.7811492840913
+0.9253 0.781325832778974
+0.9235 0.779679748382689
+0.9261 0.777641182852937
+0.928 0.79871541077422
+0.9233 0.773438603765791
+0.9205 0.772045824288859
+0.9255 0.7729940046365
+0.9259 0.807837360459838
+0.9219 0.77123006130373
+0.9207 0.77044909042321
+0.9288 0.818150235194053
+};
+\addlegendentry{Post Training Test results NSGA}
+\addplot [green01270, mark=x, mark size=3, mark options={solid}, only marks]
+table {%
+0.9274 0.845408699293145
+0.9248 0.834405495471781
+0.915 0.782827128074002
+0.9218 0.781860203996466
+0.9188 0.788177807634873
+0.9142 0.7811492840913
+0.9266 0.781325832778974
+0.9218 0.779679748382689
+0.9206 0.777641182852937
+0.9214 0.79871541077422
+0.9196 0.773438603765791
+0.9194 0.772045824288859
+0.9176 0.7729940046365
+0.9238 0.807837360459838
+0.9206 0.77123006130373
+0.9212 0.77044909042321
+0.9276 0.818150235194053
+};
+\addlegendentry{Post Training Validation results NSGA}
+\end{axis}
+
+\end{tikzpicture}

@@ -1,0 +1,51 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{lightgray204}{RGB}{204,204,204}
+
+\begin{axis}[
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.97)},
+  anchor=north west,
+  draw=lightgray204
+},
+tick align=outside,
+tick pos=left,
+title={Accuracy vs normalized energy: resnet14},
+x grid style={darkgray176},
+xlabel={Accuracy},
+xmajorgrids,
+xmin=0.88459, xmax=0.90241,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Normalized energy},
+ymajorgrids,
+ymin=0.714026188692101, ymax=0.765510298261036,
+ytick style={color=black}
+]
+\addplot [red, mark=x, mark size=3, mark options={solid}, only marks]
+table {%
+0.8878 0.718903685783616
+0.8962 0.763170111462448
+0.8854 0.716366375490689
+0.886 0.733200512552542
+0.8862 0.716441203925585
+};
+\addlegendentry{Dominant solutions Pareto Pre training}
+\addplot [blue, mark=+, mark size=3, mark options={solid}, only marks]
+table {%
+0.8983 0.718903685783616
+0.9016 0.763170111462448
+0.8936 0.716366375490689
+0.8998 0.733200512552542
+0.895 0.716441203925585
+};
+\addlegendentry{Dominant solutions post training}
+\end{axis}
+
+\end{tikzpicture}
