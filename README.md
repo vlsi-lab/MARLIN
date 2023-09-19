@@ -1,11 +1,29 @@
-# template_repository
-This repository is created just to be used as a template for the creation of new repositories.
+![](https://raw.githubusercontent.com/vlsi-lab/MARLIN/main/marlin_logo.png)
+# About
+This repository contains the code used in the research paper "**MARLIN: a Co-design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge**".
+The code can be used as it is to reproduce the results presented in the paper.
 
-## Remember to put the LICENSE file in your repository!
-The license available here is the **SOLDERPAD HARDWARE LICENSE version 0.51**, it "is based closely on the Apache License Version 2.0". You are free to use whatever license you like.
+MARLIN is a methodology that enables the implementation of approximate neural networks (NNs) on a RISC-V core.
+It is built from 4 components:
+- A runtime reconfigurable multiplier with 256 approximation levels, each one with its own error distribution and average power.
+- A modified RISC-V core, with the multiplier inserted in the execution stage and the  
+- A modified PULP toolchain, with automatic emb
+- A search algorithm based on NSGA-II that evaluate thousands of approxximate NNs and select those with the best energy/accuracy trade-off.
 
-## Citation
-If you want to have a nice "cite this repository button" under the description of the repository, add the CITATION.cff file to the root of the repository. **Remember to edit it adding information on your paper!**
+## Install instructions
 
-## Write an informative README
-This is the base of a good repository, otherwise no one will understand what you put in your repository.
+Execute the following commands to install 
+Clone the repository with 
+> git clone https://github.com/vlsi-lab/MARLIN.git
+or 
+> git clone git@github.com:vlsi-lab/MARLIN.git
+
+Then open a terminal and intall ninja-build
+> sudo apt update
+> sudo apt install ninja-build
+
+Install marlin environment (requires anaconda or miniconda https://www.anaconda.com/download)
+> cd MARLIN
+> conda env create -f marlin.yml
+
+Inside each folder there are README files with additional information useful to install additional components, execute the code and replicate the data. 
