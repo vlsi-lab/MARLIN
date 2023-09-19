@@ -28,7 +28,7 @@ class my_mult(object):
                         if not mul_line:
                             print ("EOF reached, no result found")
                             break
-                        match_mul = re.match(mul_pattern, mul_line) ## ERRORE
+                        match_mul = re.match(mul_pattern, mul_line) 
                         if (match_mul != None):
                             rem_string = re.sub(mul_pattern,"", mul_line)
                             # isolate the numeric value

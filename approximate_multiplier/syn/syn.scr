@@ -1,0 +1,39 @@
+analyze -library WORK -format sv {../rtl/HA.sv}
+analyze -library WORK -format sv {../rtl/FA.sv}
+analyze -library WORK -format sv {../rtl/mul_9x9_signed_bw.sv}
+analyze -library WORK -format sv {../rtl/appr_wrapper.sv}
+
+set power_preserve_rtl_hier_names true
+
+elaborate appr_wrapper
+
+
+set min_clk_period 2
+create_clock -name MY_CLK -period $min_clk_period clk
+###### First compilation using the "unachievable constraint"
+set clk_period $min_clk_period
+set_max_delay $clk_period -from [all_inputs]
+set_max_delay $clk_period -to [all_outputs]
+set_max_delay $clk_period -from [all_inputs] -to [all_outputs]
+set_dont_touch_network MY_CLK
+
+set compile_ultra_ungroup_dw false
+compile_ultra -no_autoungroup
+
+####### Saving outputs
+write -hierarchy -format vhdl -output ./netlist/appr_mul_netlist.vhdl
+write -hierarchy -format verilog -output ./netlist/appr_mul_netlist.v
+
+write_sdf ./netlist/appr_mul.sdf
+write_sdc ./netlist/appr_mul.sdc
+list_design
+current_design mul_9x9_signed_bw
+report_timing -significant_digits 4 > ./report_current_design/timing_appr.txt
+report_area > ./report_current_design/area_appr.txt
+report_resources > ./report_current_design/resources_appr.txt
+report_power > ./report_current_design/power_appr_syn.txt
+
+
+
+#exit
+

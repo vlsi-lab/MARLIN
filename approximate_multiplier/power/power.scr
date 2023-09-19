@@ -1,0 +1,16 @@
+set a_w [lindex $my_list 0]
+set b_w [lindex $my_list 1]
+set appr_level [lindex $my_list 2]
+puts "a_w = $a_w, b_w = $b_w, appr_level = $appr_level "
+
+read_verilog -netlist ../syn/netlist/appr_mul_netlist.v
+
+current_design mul_9x9_signed_bw
+
+read_saif -input ./saif/approx_mul_${a_w}x${b_w}_${appr_level}.saif -instance tb/dut/mul_9x9_appr_i -unit ns -scale 1
+
+#create_clock -name MY_CLK clk
+
+report_power > ./report/power_approx_${a_w}x${b_w}_${appr_level}.txt
+
+exit
