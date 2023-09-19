@@ -34,7 +34,7 @@ Inside each folder there are README files with additional information useful to 
 In order to use the multipliers LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip at https://www.7-zip.org/download.html
 When launching any python file, remember to keep the folder hierarchy as defined in this repository.
 You can add the folders to the PYTHONPATH with the following command:
-> export PYTHONPATH="${PYTHONPATH}:~/MARLIN/:~/MARLIN/neural_networks:~/MARLIN/benchmark_CIFAR10:~/MARLIN/approximate_multiplier$:~/MARLIN/riscv_characterization"$
+> export PYTHONPATH="${PYTHONPATH}:your_path_to_marlin/MARLIN/:your_path_to_marlin/MARLIN/neural_networks:your_path_to_marlin/MARLIN/benchmark_CIFAR10:your_path_to_marlin/MARLIN/approximate_multiplier$:your_path_to_marlin/MARLIN/riscv_characterization"$
 
 ## Citation
 If you used this code in your work, consider adding a reference to our paper **editorial information to be added after publishing**
