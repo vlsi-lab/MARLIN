@@ -1,12 +1,13 @@
 # Reconfigurable Multiplier
 
 ## Table of contents
-- [Table of contents](#table-of-contents)
-- [Folders organization](#folders-organization)
-- [Source files](#source-files)
-- [Testbenches](#testbenches)
-- [Results](#results)
-  - [Setup](#setup)
+- [Reconfigurable Multiplier](#reconfigurable-multiplier)
+  - [Table of contents](#table-of-contents)
+  - [Folder organization](#folder-organization)
+  - [Source files](#source-files)
+  - [Testbenches](#testbenches)
+  - [Results](#results)
+    - [Setup](#setup)
 
 ## Folders organization
 This directory contains two sub-directories:
@@ -44,6 +45,8 @@ The folder contains three sub-folders organized as:
 - `results_synthesis_approximate_multiplier`: contains the area and timing report extracted from the synthesis procedure.
 - `results_power_approximate_multiplier`: contains post-synthesis power estimation for all 256 approximate levels in the full-precision 9-bit inputs configuration.
 - `results_multiplier_designware`: contains area, timing, resource and power reports for a 9-bit inputs multiplier described in SystemVerilog using the `*` operator. 
+
+Furthermore, it contains the file `errors_9x9_approx.txt` which reports all the error metrics of interest for each of the 256 approximation levels. These metrics have been evaluated using exhaustive simulations results.
 
 ### Setup
 All RTL simulations have been performed using Siemens QuestaSim. 
