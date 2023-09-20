@@ -1,14 +1,14 @@
 import os
 import torch
 from torch import nn
-import nemo
+import riscv_characterization.nemo 
 import numpy as np
 from Utils.torch_neural_networks_library import *
 import json
 import onnx
 import netron
 from packaging import version
-from Utils.NEMO_node import NEMO_node
+from riscv_characterization.nemo_training_quantization import NEMO_node
 import sys
 from adapt.approx_layers import axx_layers as approxNN
 from Utils.LUT_convert import generate_mult_LUT

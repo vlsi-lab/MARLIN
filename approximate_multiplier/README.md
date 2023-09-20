@@ -9,7 +9,7 @@
   - [Results](#results)
     - [Setup](#setup)
 
-## Folders organization
+## Folder organization
 This directory contains two sub-directories:
 - `rtl`: hosts all system-verilog source files building up the multiplier architecture.
 - `tb`: contains different testbench models.

@@ -5,7 +5,7 @@ import random
 from neural_networks.adapt.approx_layers import axx_layers as approxNN
 from neural_networks.CIFAR10.resnet import ResidualModule
 from neural_networks.utils import evaluate_test_accuracy
-import nemo
+import riscv_characterization.nemo 
 
 # TODO: controllare dependencies e isinstance che ci sia nemo dappertutto
 def encode_chromosome(model, n_appr_levels = 255, axx_linear=False):

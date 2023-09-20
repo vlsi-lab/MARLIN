@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import transforms
-import nemo
+import riscv_characterization.nemo  
 import numpy as np
 from pathlib import Path
 import json
