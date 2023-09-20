@@ -1,6 +1,6 @@
 # `pulp-riscv-gnu-toolchain-mod`
 The repository version that has been used is: 
-https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git
+[pulp-riscv-gnu-toolchain](https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git)
 commit 49dea1915979fdf91eb2ad4a8873e4cd88a6b811
 
 ## Paths

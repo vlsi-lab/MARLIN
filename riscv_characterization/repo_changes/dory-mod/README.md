@@ -1,5 +1,5 @@
 # `dory-mod`
-https://github.com/pulp-platform/dory.git
+The original repository version is [dory](https://github.com/pulp-platform/dory.git)
 commit 0e9011e752476c66c12770cfd283f826bdd5428a
 
 To correctly clone the submodules first you need to delete the empty folders, then execute:

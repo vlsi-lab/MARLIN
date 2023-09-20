@@ -1,5 +1,5 @@
 # `cv32e40p-mod` 
-The employed repository version is https://github.com/pulp-platform/cv32e40p.git, commit 8d58109ab61e1fb6c9dcbafefb8f3a56ee596427.
+The employed repository version is [cv32e40p](https://github.com/pulp-platform/cv32e40p.git), commit 8d58109ab61e1fb6c9dcbafefb8f3a56ee596427.
 It is the version that is part of the pulp project.
 
 ## Paths

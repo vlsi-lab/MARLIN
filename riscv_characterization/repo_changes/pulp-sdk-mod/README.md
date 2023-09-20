@@ -1,6 +1,6 @@
 # `pulp-sdk-mod`
 The repository version is: 
-https://github.com/pulp-platform/pulp-sdk.git commit 8b84cbb30604aa01cf0824855d98e55f0d43d7ce
+[pulp-sdk](https://github.com/pulp-platform/pulp-sdk.git),  commit 8b84cbb30604aa01cf0824855d98e55f0d43d7ce
 
 ## Paths
 - `common.sh` : `pulp-sdk/configs/`

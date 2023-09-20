@@ -1,6 +1,6 @@
 # `pulp-mod`
 The repository version employed is: 
- https://github.com/pulp-platform/pulp.git commit b6ae54700b76395b049742ebfc52c5aaf6e148a5 (master) 
+[pulp](https://github.com/pulp-platform/pulp.git) commit b6ae54700b76395b049742ebfc52c5aaf6e148a5 (master) 
 
 ## Paths
 -`tb_pulp`: `pulp/rtl/tb/`

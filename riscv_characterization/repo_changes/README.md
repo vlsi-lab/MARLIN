@@ -18,3 +18,5 @@ The listed files are contained in folders named as the original repo plus `_mod`
 The setup procedure, dependencies and packages required to correctly install the PULP framework are not reported here. Refer to the links provided above to find the exact instructions and workflow to follow.
 
 **We will provide a simple Python script to clone all the repositories with the correct version and copy the modified files in the correct path, using the provided JSON dictionary. However, notice that intermidiate steps, not covered by this script, may be required to correctly setup the toolchain. In that case, refer to the instructions in the corresponding PULP group repositories.**
+
+**We have programmed to manage dependencies through [vendor](https://opentitan.org/book/util/doc/vendor.html#utilvendorpy-vendor-in-components) tool in a future release.**

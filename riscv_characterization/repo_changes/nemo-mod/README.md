@@ -1,6 +1,6 @@
 # `nemo-mod`
-The repository version that was employed is:
-https://github.com/pulp-platform/nemo.git , commit ed32239efaa256cea061a5426d0c1507c5f005ee (tag: v0.0.8).
+The repository version that was employed is
+[nemo](https://github.com/pulp-platform/nemo.git) , commit ed32239efaa256cea061a5426d0c1507c5f005ee (tag: v0.0.8).
 
 ## Paths
 - `graph.py`: `nemo/`
