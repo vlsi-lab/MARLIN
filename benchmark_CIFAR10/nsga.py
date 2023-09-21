@@ -20,7 +20,7 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--neural-network', default="resnet32", type=str, help="Choose one from fashionmnist, mnist, resnet8, resnet14, resnet20, resnet32, resnet50, resnet56")
+    parser.add_argument('--neural-network', default="resnet8", type=str, help="Choose one from fashionmnist, mnist, resnet8, resnet14, resnet20, resnet32, resnet50, resnet56")
     parser.add_argument('--batch-size', default=100, type=int, help="Number of images processed during each iteration")
     parser.add_argument('--data-dir', default="/data/dataset/pytorch_only/", type=str, help="Directory in which the MNIST and FASHIONMNIST dataset are stored or should be downloaded")
     parser.add_argument('--epochs', default=1, type=int, help="Number of retraining epochs executed for each individual during the NSGA search")
@@ -39,7 +39,7 @@ def get_args():
     parser.add_argument('--start-from-last', default=False, type=bool, help="Set to true to reload a previous pareto front configuration")
     parser.add_argument('--axx-linear', default=False, type=bool, help="Set to True to enable approximate computing of linear layers. Ignored by default for CIFAR10 networks")
     parser.add_argument('--population', default=70, type=int, help="The number of new individuals evaluated at each iteration. Each individal is an approximate NN")
-    parser.add_argument('--generations', default=120, type=int, help="The number of generations explored during the genetic search")
+    parser.add_argument('--generations', default=80, type=int, help="The number of generations explored during the genetic search")
     parser.add_argument('--crossover-probability', default=0.8, type=float, help="Probability of performing a single-point crossover operation on an individual")
     parser.add_argument('--mutation-probability', default=0.8, type=float, help="Probability of gene mutation occurring on an individual")
     parser.add_argument('--axx-levels', default=255, type=int, help="Number of approximation levels supported by the multiplier, or number of LUT corresponding to different multipliers")

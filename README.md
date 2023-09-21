@@ -13,7 +13,7 @@ It is built from 4 components:
 ## Install instructions
 Execute the following commands to install 
 Clone the repository with 
-> git clone https://github.com/vlsi-lab/MARLIN.git 
+> git clone https://github.com/vlsi-lab/MARLIN.git
 
 or 
 
@@ -21,12 +21,12 @@ or
 
 Then open a terminal and intall ninja-build
 > sudo apt update
-
+>
 > sudo apt install ninja-build
 
 Install marlin environment (requires anaconda or miniconda https://www.anaconda.com/download)
 > cd MARLIN
-
+>
 > conda env create -f marlin.yml
 
 Inside each folder there are README files with additional information useful to install additional components, execute the code and replicate the data. 
