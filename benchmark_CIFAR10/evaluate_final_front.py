@@ -40,7 +40,7 @@ def get_args():
     parser.add_argument('--mutation-probability', default=0.8, type=float, help="Probability of gene mutation occurring on an individual")
     parser.add_argument('--axx-levels', default=255, type=int, help="Number of approximation levels supported by the multiplier, or number of LUT corresponding to different multipliers")
     parser.add_argument('--disable-aug', default=True, type=bool, help="Set to True to disable data augmentation to obtain deterministic results")
-    parser.add_argument('--just-plot', default=False, type=bool, help="Set to True to generate and plot the graphs without retraining the approximate neural networks")
+    parser.add_argument('--just-plot', default=False, type=bool, help="Set to True to generate and plot the graphs without retraining the approximate neural networks. This flag also enables the filtering of Pareto dominated solutions, generating a PDF and a TEX graphs containing only the dominant points.")
     return parser.parse_args()
 
 

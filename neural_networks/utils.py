@@ -35,7 +35,7 @@ mnist_mean = 0.1307
 mnist_std = 0.3081
 
 
-def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=False):
+def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=False, is_integer=False):
     """
     Generate train and test dataloaders
     @param dir_: string, directory in which the CIFAR-10 dataset is stored
@@ -43,18 +43,27 @@ def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=F
     @param dataset_type: str, dataset type can be "cifar10", "mnist" or "fashionmnist"
     @param num_workers: int, number of workers used for the pre-processing of the dataset, min is 0 max is the thread count of the CPU
     @param disable_shuffle: disable randomization of the image/label indices, se to False in order to process the same data in the same order for reproducibility
+    @param is_integer: normalization done for integer activations, must beset to True only for NEMO processing
     @return: returns the dataloaders
     """
+    if is_integer:
+        int_mean = -0.5
+    else:
+        int_mean = 0
+
     if dataset_type == "cifar10":
+
         train_transform = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(cifar10_mean, cifar10_std),
+            transforms.Normalize(int_mean, 1)
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(cifar10_mean, cifar10_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.CIFAR10(dir_, train=True, transform=train_transform, download=True)
         test_dataset = datasets.CIFAR10(dir_, train=False, transform=test_transform, download=True)
@@ -62,10 +71,12 @@ def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=F
         train_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(fashionmnist_mean, fasnionmnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(fashionmnist_mean, fasnionmnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.FashionMNIST(dir_, train=True, transform=train_transform, download=True)
         test_dataset = datasets.FashionMNIST(dir_, train=False, transform=test_transform, download=True)
@@ -74,10 +85,12 @@ def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=F
         train_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mnist_mean, mnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mnist_mean, mnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.MNIST(dir_, train=True, transform=train_transform, download=True)
         test_dataset = datasets.MNIST(dir_, train=False, transform=test_transform, download=True)
@@ -102,7 +115,7 @@ def get_loaders(dir_, batch_size, dataset_type, num_workers=2, disable_shuffle=F
     return train_loader, test_loader
 
 
-def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0.2, disable_aug=False):
+def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0.2, disable_aug=False, is_integer=False):
     """
     Generate train and test dataloaders
     @param dir_: string, directory in which the CIFAR-10 dataset is stored
@@ -111,14 +124,20 @@ def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0
     @param num_workers: int, number of workers used for the pre-processing of the dataset, min is 0 max is the thread count of the CPU
     @param split_val: float, number between 0 and 1 used to split the training set in training/validation, the validation set has a dimension of split_val*training_set
     @param disable_aug: disable data augmentation, se to False in order to process the same data for reproducibility
+    @param is_integer: normalization done for integer activations, must beset to True only for NEMO processing
     @return: returns the dataloaders
     """
+    if is_integer:
+        int_mean = -0.5
+    else:
+        int_mean = 0
 
     if dataset_type == "cifar10":
         if disable_aug:
             train_transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(cifar10_mean, cifar10_std),
+                transforms.Normalize(int_mean, 1)
             ])
         else:
             train_transform = transforms.Compose([
@@ -126,10 +145,12 @@ def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(cifar10_mean, cifar10_std),
+                transforms.Normalize(int_mean, 1)
             ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(cifar10_mean, cifar10_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.CIFAR10(dir_, train=True, transform=train_transform, download=True)
         val_dataset = datasets.CIFAR10(dir_, train=True, transform=test_transform, download=True)
@@ -138,10 +159,12 @@ def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0
         train_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(fashionmnist_mean, fasnionmnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(fashionmnist_mean, fasnionmnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.FashionMNIST(dir_, train=True, transform=train_transform, download=True)
         val_dataset = datasets.FashionMNIST(dir_, train=True, transform=train_transform, download=True)
@@ -151,10 +174,12 @@ def get_loaders_split(dir_, batch_size, dataset_type, num_workers=2, split_val=0
         train_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mnist_mean, mnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         test_transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mnist_mean, mnist_std),
+            transforms.Normalize(int_mean, 1)
         ])
         train_dataset = datasets.MNIST(dir_, train=True, transform=train_transform, download=True)
         val_dataset = datasets.MNIST(dir_, train=True, transform=train_transform, download=True)

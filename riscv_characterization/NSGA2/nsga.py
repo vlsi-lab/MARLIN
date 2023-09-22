@@ -52,6 +52,12 @@ class ProblemWrapper(Problem):
         res2 = []
         for design in designs:
             # design is an individual, f1 and f2 are fitness functions to optimize
+            # TODO: fare qua update adapt
+            if json_file is None:
+                json_file = './nemo_training_quantization/act.json'  # choose a default name
+            my_utils.to_nemo_id_model(model, json_file)
+            my_utils.adapt_model_9x9(model, chromosome)  # model becomes adapt model
+
             f1 = GA_utils.evaluate_power(mult_per_layer, power_list, max_power, design)
             f2 = 1.0/GA_utils.evaluate_accuracy(model, design, None, None)
             res1.append(f1)
