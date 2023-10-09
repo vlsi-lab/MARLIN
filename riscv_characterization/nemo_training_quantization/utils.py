@@ -1,7 +1,7 @@
 import os
 import torch
 from torch import nn
-import riscv_characterization.nemo 
+import riscv_characterization.vendor.nemo 
 import numpy as np
 from Utils.torch_neural_networks_library import *
 import json
