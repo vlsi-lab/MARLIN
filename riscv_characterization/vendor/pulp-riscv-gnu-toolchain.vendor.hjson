@@ -7,7 +7,7 @@
     rev: "49dea1915979fdf91eb2ad4a8873e4cd88a6b811",
   },
 
-  patch_dir: "../repo_changes/pulp-riscv-gnu-toolchain-mod",
+  patch_dir: "./patches/pulp-riscv-gnu-toolchain_patches/",
 
   exclude_from_upstream: [
     "ci",

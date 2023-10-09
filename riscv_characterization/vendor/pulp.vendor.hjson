@@ -7,8 +7,6 @@
     rev: "marlin",
   },
 
-  //patch_dir : "../repo_changes/pulp-mod/",
-
   exclude_from_upstream: [
     "ci",
     ".github",

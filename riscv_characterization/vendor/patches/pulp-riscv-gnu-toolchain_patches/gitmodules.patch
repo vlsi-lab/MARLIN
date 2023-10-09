@@ -1,5 +1,7 @@
---- pulp-riscv-gnu-toolchain/.gitmodules	2023-10-09 10:38:02.418764457 +0200
-+++ b/.gitmodules	2023-10-09 10:37:38.127662089 +0200
+diff --git a/.gitmodules b/.gitmodules
+index ac90db8..ff61d4f 100644
+--- a/.gitmodules
++++ b/.gitmodules
 @@ -1,6 +1,7 @@
  [submodule "riscv-binutils-gdb"]
  	path = riscv-binutils-gdb

@@ -8,7 +8,7 @@
     only_subdir: "nemo/"
   },
 
-  patch_dir: "../repo_changes/nemo-mod/"
+  patch_dir: "./patches/nemo_patches/"
   
   exclude_from_upstream: [
     "ci",

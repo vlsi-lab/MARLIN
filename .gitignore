@@ -1,6 +1,7 @@
 __pycache__/
 .idea/
 riscv_characterization/repo_changes/dory-mod/*.patch
+riscv_characterization/repo_changes/*/*.patch
 *.pth
 !neural_networks/models/.gitkeep
 !neural_networks/adapt/cpu-kernels-8x8/axx_mults_8x8/.gitkeep

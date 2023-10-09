@@ -6,7 +6,7 @@
     url: "https://github.com/pulp-platform/pulp-sdk.git",
     rev: "8b84cbb30604aa01cf0824855d98e55f0d43d7ce",
   },
-  patch_dir : "../repo_changes/pulp-sdk-mod/",
+  patch_dir : "./patches/pulp-sdk_patches/",
 
   exclude_from_upstream: [
     "ci",

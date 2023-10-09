@@ -4,7 +4,7 @@ The repository version employed is:
 
 ## Paths
 -`tb_pulp`: `pulp/rtl/tb/`
--`compile.tcl`: `pulp/sim/` **generated after**
+-`compile.tcl`: `pulp/sim/` **generated after**. It is an auto-generated file, it should not be necessary to modify it. This file is provided just as an example and paths may be different
 -`vsim.tcl`: `pulp/sim/tcl_files/config/`
 
 
@@ -14,4 +14,3 @@ The repository version employed is:
 -`run.tcl`: can be found at `pulp/sim/tcl_files/`. The library for post-synthesis simulation has to be added.
 -`vsim.tcl`: customization to run `export_vcd`. 
 
-**Qui io rimanderei a seguire tutte le istruzioni di settaggio nelle relative repository, se no non si finisce più**
