@@ -1,0 +1,22 @@
+{
+  name: "pulp",
+  target_dir: "pulp",
+
+  upstream: {
+    url: "https://github.com/flague/pulp.git",
+    rev: "marlin",
+  },
+
+  //patch_dir : "../repo_changes/pulp-mod/",
+
+  exclude_from_upstream: [
+    "ci",
+    ".github",
+    "example_tb",
+    "CONTRIBUTING.md",
+    ".gitlab-ci.yml",
+    ".dir-locals.el",
+    "docs",
+    "rtl/vendor",
+  ]
+}
