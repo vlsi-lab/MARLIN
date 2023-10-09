@@ -4,7 +4,7 @@ The repository version employed is:
 
 ## Paths
 -`tb_pulp`: `pulp/rtl/tb/`
--`compile.tcl`: `pulp/rtl/tb/`
+-`compile.tcl`: `pulp/sim/` **generated after**
 -`vsim.tcl`: `pulp/sim/tcl_files/config/`
 
 

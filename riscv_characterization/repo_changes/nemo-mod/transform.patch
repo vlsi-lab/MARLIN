@@ -1,0 +1,45 @@
+--- nemo/transform.py	2023-10-03 20:19:33.789332901 +0200
++++ nemo-mod/transform.py	2023-10-03 20:19:22.535289315 +0200
+@@ -42,7 +42,7 @@
+ from nemo.transf.utils import *
+ from nemo.transf.sawb import *
+ 
+-def quantize_pact(module, W_bits=4, x_bits=4, dummy_input=None, remove_dropout=False, **kwargs):
++def quantize_pact(module, W_bits=4, x_bits=4, b_bits=7, dummy_input=None, remove_dropout=False, **kwargs):
+     r"""Takes a PyTorch module and makes it quantization-aware with PACT, recursively.
+ 
+     The function follows recursively the data structures containing PyTorch layers (typically as hierarchical lists, e.g.
+@@ -116,6 +116,8 @@
+     module.set_eps_in                  = types.MethodType(nemo.transf.deploy._set_eps_in_pact, module)
+     module.round_weights               = types.MethodType(nemo.transf.deploy._round_weights_pact, module)
+     module.harden_weights              = types.MethodType(nemo.transf.deploy._harden_weights_pact, module)
++    module.round_bias                  = types.MethodType(nemo.transf.deploy._round_bias_pact, module)
++    module.harden_bias                 = types.MethodType(nemo.transf.deploy._harden_bias_pact, module)
+     module.set_deployment              = types.MethodType(nemo.transf.deploy._set_deployment_pact, module)
+     module.qd_stage                    = types.MethodType(nemo.transf.deploy._qd_stage, module)
+     module.id_stage                    = types.MethodType(nemo.transf.deploy._id_stage, module)
+@@ -123,6 +125,7 @@
+     module.export_weights_legacy_int16 = types.MethodType(nemo.transf.export._export_weights_legacy_int16, module)
+     module.change_precision            = types.MethodType(nemo.transf.utils._change_precision_pact, module)
+     module.reset_alpha_weights         = types.MethodType(nemo.transf.utils._reset_alpha_weights_pact, module)
++    module.reset_alpha_bias            = types.MethodType(nemo.transf.utils._reset_alpha_bias_pact, module)
+     module.reset_alpha_act             = types.MethodType(nemo.transf.utils._reset_alpha_act_pact, module)
+     module.get_clip_parameters         = types.MethodType(nemo.transf.utils._get_clip_parameters_pact, module)
+     module.get_nonclip_parameters      = types.MethodType(nemo.transf.utils._get_nonclip_parameters_pact, module)
+@@ -142,6 +145,7 @@
+     module.disable_grad_sawb           = types.MethodType(nemo.transf.sawb._disable_grad_sawb, module)
+     module.weight_clip_sawb            = types.MethodType(nemo.transf.sawb._weight_clip_sawb, module)
+     module.W_precision = Precision(W_bits, None)
++    module.b_precision = Precision(b_bits, None)
+     module.x_precision = Precision(x_bits, None)
+     return module
+ 
+@@ -203,6 +207,8 @@
+         module.__class__.__name__ == "PACT_Conv1d" or \
+         module.__class__.__name__ == "PACT_Linear"):
+         module.integerize_weights(**kwargs)
++        if(module.bias is not None):
++            module.integerize_bias(**kwargs)
+         return module
+     elif (module.__class__.__name__ == "PACT_QuantizedBatchNormNd"):
+         module = PACT_IntegerBatchNormNd(kappa=module.kappa, lamda=module.lamda, eps_in=module.eps_in, eps_kappa=module.eps_kappa, eps_lamda=module.eps_lamda)

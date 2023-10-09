@@ -1,0 +1,91 @@
+--- nemo/transf/utils.py	2023-10-03 20:31:16.159056639 +0200
++++ nemo-mod/transf/utils.py	2023-10-03 20:34:42.645857574 +0200
+@@ -32,7 +32,7 @@
+ import re
+ from nemo.transf.common import *
+ 
+-def _change_precision_pact(self, bits=4, scale_activations=True, scale_weights=True, verbose=True, reset_alpha=True, min_prec_dict=None, **kwargs):
++def _change_precision_pact(self, bits=4, scale_activations=True, scale_weights=True, scale_bias=True, verbose=True, reset_alpha=True, min_prec_dict=None, **kwargs):
+     r"""Changes the target precision of a PACT quantization-aware layer.
+ 
+     
+@@ -59,9 +59,12 @@
+         self.x_precision.bits = bits
+     if scale_weights and bits is not None:
+         self.W_precision.bits = bits
++    if scale_bias and bits is not None:
++        self.b_precision.bits = bits
+     for n,m in self.named_modules():
+         min_prec_x = copy.deepcopy(self.x_precision)
+         min_prec_W = copy.deepcopy(self.W_precision)
++        min_prec_b = copy.deepcopy(self.b_precision)
+         if min_prec_dict is not None:
+             try:
+                 min_prec_x.bits = min_prec_dict[n]['x_bits']
+@@ -71,6 +74,10 @@
+                 min_prec_W.bits = min_prec_dict[n]['W_bits']
+             except KeyError:
+                 pass
++            try:
++                min_prec_b.bits = min_prec_dict[n]['b_bits']
++            except KeyError:
++                pass
+         if m.__class__.__name__ == "PACT_Act" and scale_activations:
+             m.precision = max(self.x_precision, min_prec_x)
+         if scale_weights and (m.__class__.__name__ == "PACT_Conv2d" or \
+@@ -79,6 +86,16 @@
+             m.W_precision = max(self.W_precision, min_prec_W)
+             if reset_alpha:
+                 m.reset_alpha_weights()
++
++        if scale_bias and (m.__class__.__name__ == "PACT_Conv2d" or \
++                              m.__class__.__name__ == "PACT_Conv1d" or \
++                              m.__class__.__name__ == "PACT_Linear"):
++            m.b_precision = max(self.b_precision, min_prec_b)
++            if reset_alpha:
++                try:
++                    m.reset_alpha_bias()
++                except:
++                    pass
+         if verbose and (m.__class__.__name__ == "PACT_Act") and scale_activations:
+             try:
+                 logging.info("[Quant]\t\t %s: x_bits=%.2f" % (n, m.precision.get_bits()))
+@@ -91,6 +108,13 @@
+                 logging.info("[Quant]\t\t %s: W_bits=%.2f" % (n, m.W_precision.get_bits()))
+             except AttributeError:
+                 pass
++        if verbose and scale_bias and (m.__class__.__name__ == "PACT_Conv2d" or \
++                                          m.__class__.__name__ == "PACT_Conv1d" or \
++                                          m.__class__.__name__ == "PACT_Linear"):
++            try:
++                logging.info("[Quant]\t\t %s: b_bits=%.2f" % (n, m.b_precision.get_bits()))
++            except AttributeError:
++                pass
+ 
+ def _set_train_loop_pact(self):
+     r"""Sets modules so that weights are not treated like hardened (e.g., for training).
+@@ -114,6 +138,8 @@
+             m.__class__.__name__ == "PACT_Linear" ):
+             m.train_loop = False
+             m.train_loop_oldprec = float(m.W_beta.item()+m.W_alpha.item())/(2.0**(m.W_precision.get_bits())-1)
++        if (m.bias is not None):
++            m.train_loop_oldprec_b = float(m.b_beta.item()+m.b_alpha.item())/(2.0**(m.b_precision.get_bits())-1)
+ 
+ def _reset_alpha_act_pact(self, **kwargs):
+     r"""Resets :py:class:`nemo.quant.PACT_Act` parameter `alpha` the value collected through statistics.
+@@ -153,3 +179,15 @@
+             m.__class__.__name__ == "PACT_Linear"):
+             m.reset_alpha_weights(**kwargs)
+ 
++def _reset_alpha_bias_pact(self, method='standard', **kwargs):
++    r"""Resets parameter `b_alpha`.
++
++    """
++
++    for n, m in self.named_modules():
++        if (m.__class__.__name__ == "PACT_Conv2d" or \
++                m.__class__.__name__ == "PACT_Conv1d" or \
++                m.__class__.__name__ == "PACT_Linear"):
++            if(m.bias is not None):
++                m.reset_alpha_bias(**kwargs)
++

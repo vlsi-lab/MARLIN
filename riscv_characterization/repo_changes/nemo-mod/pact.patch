@@ -1,0 +1,666 @@
+--- nemo/quant/pact.py	2023-10-03 20:31:16.161056647 +0200
++++ nemo-mod/quant/pact.py	2023-10-03 20:32:28.891338758 +0200
+@@ -78,6 +78,18 @@
+     W = W.clamp(0, clip)
+     return W
+ 
++# PACT quantization for inference of bias
++def pact_quantize_inference_bias(b, eps, clip):
++    b_quant = b.clone().detach()
++    b_quant.data[:] = (b_quant.data[:] / eps).floor()*eps
++    b_quant.clamp_(0, clip.item())
++    return b_quant
++
++def pact_quantize_deploy_bias(b, eps, clip):
++    b = (b / eps).floor()*eps
++    b = b.clamp(0, clip)
++    return b
++
+ # PACT signed quantization for inference (workaround for pact_quantize_signed not functional in inference)
+ def pact_quantize_signed_inference(W, eps, clip):
+     return pact_quantize_asymm_inference(W, torch.as_tensor(eps), torch.as_tensor(clip), torch.as_tensor(clip))
+@@ -100,6 +112,32 @@
+     W_quant.clamp_(-alpha.item(), beta.item() + eps.item())
+     return W_quant
+ 
++# PACT signed quantization for inference (workaround for pact_quantize_signed not functional in inference)
++def pact_quantize_signed_inference_bias(b, eps, clip):
++    return pact_quantize_asymm_inference_bias(b, torch.as_tensor(eps), torch.as_tensor(clip), torch.as_tensor(clip))
++
++# PACT asymmetric quantization for inference (workaround for pact_quantize_asymm not functional in inference)
++def pact_quantize_asymm_inference_bias(b, eps, alpha, beta, train_loop=True, train_loop_oldprec_b=None):
++    # for numerical reasons, b_quant should be put at a "small_eps" of its "pure" value to enable
++    # running againt the weights through pact_quantize_asymm_inference (the torch.floor function
++    # won't return the correct value otherwise)
++    # we choose small_eps = eps/2
++    try:
++        if not train_loop and train_loop_oldprec_b is not None:
++            b_quant = b.clone().detach()
++            b_quant.data[:] = (b_quant.data[:] / train_loop_oldprec_b).floor()*train_loop_oldprec_b + eps*0.5
++        else:
++            b_quant = b.clone().detach() + eps*0.5
++        b_quant.data[:] = (b_quant.data[:] / eps).floor()*eps
++        # alpha, beta are also represented with quantized numbers
++        alpha = torch.ceil(alpha/eps)*eps
++        beta  = torch.floor(beta/eps)*eps
++        b_quant.clamp_(-alpha.item(), beta.item() + eps.item())
++    except:
++        b_quant = b
++    return b_quant
++
++
+ # DEPRECATED
+ def pact_pwl(x, eps, alpha, beta, q0=0):
+     beta = beta.abs()
+@@ -370,7 +408,7 @@
+             self.D = D
+         else:
+             self.D = min(D, 2.0**(32-1-(self.precision.get_bits())))
+-
++        self.D = torch.round(self.D)    # try to avoid errors of rounding
+     def get_output_eps(self, eps_in):
+         r"""Get the output quantum (:math:`\varepsilon`) given the input one.
+ 
+@@ -575,12 +613,12 @@
+         # self.eps_out   = self.alpha.item()/(2.0**(self.precision.get_bits())-1)
+         self.alpha_out = 2.0**(self.precision.get_bits())-1
+         # D is selected as a power-of-two
+-        D = 2.0**torch.ceil(torch.log2(self.requantization_factor * self.eps_out / self.eps_in))
++        D = 2.0**torch.ceil(torch.log2(self.requantization_factor * self.eps_out / self.eps_in)) # can be not integer for some reason
+         if not limit_at_32_bits:
+             self.D = D
+         else:
+             self.D = min(D, 2.0**(32-(self.precision.get_bits())))
+-
++        self.D = torch.round(self.D) #avoid error 65535.9999.. roundedn to 65535.99 in first Relu
+     def get_output_eps(self, eps_in):
+         r"""Get the output quantum (:math:`\varepsilon`) given the input one.
+ 
+@@ -612,7 +650,6 @@
+         :rtype:  :py:class:`torch.Tensor`
+ 
+         """
+-
+         x_rq = pact_integer_requantize(x, self.eps_in, self.eps_out, self.D)
+         return x_rq.clamp(0, self.alpha_out)
+ 
+@@ -946,11 +983,14 @@
+         kernel_size,
+         quantize_x=False,
+         quantize_W=True,
++        quantize_b=True,
+         quantize_y=False,
+         W_precision=None,
++        b_precision=None,
+         x_precision=None,
+         alpha=1.,
+         quant_asymm=True,
++        quant_asymm_b=True,
+         **kwargs
+     ):
+         r"""Constructor. Supports all arguments supported by :py:class:`torch.nn.Conv2d` plus additional ones.
+@@ -972,6 +1012,11 @@
+             self.W_precision = Precision()
+         else:
+             self.W_precision = Precision(bits=W_precision.get_bits())
++        if b_precision is None:
++            self.b_precision = Precision()
++        else:
++            self.b_precision = Precision(bits=b_precision.get_bits())
++        
+         if x_precision is None:
+             self.x_precision = Precision()
+         else:
+@@ -979,25 +1024,34 @@
+ 
+         self.quantize_x = quantize_x
+         self.quantize_W = quantize_W
++        self.quantize_b = quantize_b
+ 
+         super(PACT_Conv2d, self).__init__(in_channels, out_channels, kernel_size, **kwargs)
+         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+         self.W_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+         if quant_asymm:
+             self.W_beta  = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
++        
++        self.b_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
++        if quant_asymm_b:
++            self.b_beta  = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+ 
+         self.x_alpha = torch.nn.Parameter(torch.Tensor((2.0,)).to(device))
+         self.weight.data.uniform_(-1., 1.)
++        if self.bias is not None:
++            self.bias.data.uniform_(0., 0.)
+ 
+         self.quant_asymm = quant_asymm
+-
++        self.quant_asymm_b = quant_asymm_b
+         self.train_loop = True
+         self.deployment = False
+         self.train_loop_oldprec = None
+-
++        self.train_loop_oldprec_b = None
+         self.padding_value = 0
+         self.hardened = False
+         self.integerized = False
++        self.hardened_b = False
++        self.integerized_b = False
+         self.eps_out_static = None
+ 
+     def reset_alpha_weights(self, use_method='max', nb_std=5., verbose=False, dyn_range_bins=1024, dyn_range_cutoff=0., **kwargs):
+@@ -1073,6 +1127,7 @@
+             else:
+                 eps = 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1)
+                 self.weight.data = pact_quantize_signed_inference(self.weight, eps, self.W_alpha) / eps
++            self.weight.data = self.weight.data.round()
+             self.integerized = True
+ 
+     def prune_weights(self, threshold=0.1, eps=2**-9.):
+@@ -1096,6 +1151,87 @@
+         logging.info("[Pruning] Pruned %d" % np.count_nonzero(wc < eps))
+         return np.count_nonzero(wc < eps)
+ 
++    def reset_alpha_bias(self, use_method='max', nb_std=5., verbose=False, dyn_range_bins=1024, dyn_range_cutoff=0., **kwargs):
++        r"""Resets :math:`\alpha` and :math:`\beta` parameters for bias.
++
++        """
++        try:
++            if not self.quant_asymm_b:
++                self.b_alpha.data[0] = self.bias.data.abs().max()
++            elif use_method=='max':
++                self.b_alpha.data[0] = -self.bias.data.min()
++                self.b_beta.data [0] =  self.bias.data.max()
++            elif use_method=='std':
++                self.b_alpha.data[0] = -self.bias.data.mean() + nb_std*self.bias.data.std()
++                self.b_beta.data[0]  =  self.bias.data.mean() + nb_std*self.bias.data.std()
++            elif use_method=='dyn_range':
++                import scipy.stats
++                alpha_n = self.bias.data.min()
++                beta    = self.bias.data.max()
++                x = np.linspace(alpha_n.cpu().detach().numpy(), beta.cpu().detach().numpy(), dyn_range_bins)
++                res = scipy.stats.cumfreq(self.bias.data.cpu().detach().numpy(), dyn_range_bins, defaultreallimits=(alpha_n.cpu().detach().numpy(), beta.cpu().detach().numpy()))
++                yh = res.cumcount / res.cumcount[-1]
++                if not (yh<dyn_range_cutoff).any() and not (yh>1-dyn_range_cutoff).any():
++                    self.b_alpha.data[0] = torch.as_tensor(-x.min(), device=self.b_alpha.data.device)
++                    self.b_beta.data[0]  = torch.as_tensor(x.max(), device=self.b_beta.data.device)
++                elif not (yh<dyn_range_cutoff).any():
++                    self.b_alpha.data[0] = torch.as_tensor(-x[yh>1-dyn_range_cutoff].min(), device=self.b_alpha.data.device)
++                    self.b_beta.data[0]  = torch.as_tensor(x.max(), device=self.b_beta.data.device)
++                elif not (yh>1-dyn_range_cutoff).any():
++                    self.B_alpha.data[0] = torch.as_tensor(-x.min(), device=self.b_alpha.data.device)
++                    self.b_beta.data[0]  = torch.as_tensor(x[yh<dyn_range_cutoff].max(), device=self.b_beta.data.device)
++                else:
++                    self.b_alpha.data[0] = torch.as_tensor(-x[yh>1-dyn_range_cutoff].min(), device=self.b_alpha.data.device)
++                    self.b_beta.data[0]  = torch.as_tensor(x[yh<dyn_range_cutoff].max(), device=self.b_beta.data.device)
++                if self.b_alpha < 0:
++                    self.b_alpha.data[:] = -self.b_alpha.data[:]
++                if self.b_beta < 0:
++                    self.b_beta.data[:] = -self.b_beta.data[:]
++                assert (self.b_alpha >= 0).all()
++                assert (self.b_beta >= 0).all()
++
++            if verbose:
++                logging.info("[Quant] b_alpha = %.5f vs b_min = %.5f" % (self.b_alpha.data[0], self.bias.min()))
++                logging.info("[Quant] B_beta  = %.5f vs b_max = %.5f" % (self.b_beta.data[0], self.bias.max()))
++        except:
++            pass
++    def harden_bias(self):
++        r"""Replaces the current value of bias tensors (full-precision, quantized on forward-prop) with the quantized value.
++
++        """
++        try:
++            if not self.hardened_b:
++                # here, clipping parameters are also quantized in order to cope with the PACT variant utilized here.
++                # in this way, the ID version will be able to use only an integer displacement or none at all if
++                # symmetric bias are used
++                if self.quant_asymm_b:
++                    eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                    self.bias.data = pact_quantize_asymm_inference_bias(self.bias, eps, torch.ceil(self.b_alpha/eps)*eps, torch.floor(self.b_beta/eps)*eps, train_loop=False, train_loop_oldprec_b=self.train_loop_oldprec_b)
++                    self.eps_static_b = eps
++                else: 
++                    eps = (2*self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                    self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha)
++                self.hardened_b = True
++        except:
++            pass
++    def integerize_bias(self, **kwargs):
++        r"""Replaces the current value of bias tensors with the integer bias (i.e., the bias's quantized image).
++
++        """
++        try:
++            if not self.integerized_b:
++                if self.quant_asymm_b:
++                    eps = self.eps_static_b
++                    self.bias.data = self.bias.data/self.eps_static_b
++                else:
++                    eps = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++                    self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha) / eps
++                self.bias.data = self.bias.data.round()
++                self.integerized_b = True
++        except:
++            pass
++
++
+     def get_output_eps(self, eps_in):
+         r"""Get the output quantum (:math:`\varepsilon`) given the input one.
+ 
+@@ -1114,6 +1250,24 @@
+             self.eps_out_static = eps_W * eps_in
+         return self.eps_out_static
+ 
++    def get_output_eps_b(self, eps_in):
++        r"""Get the output quantum (:math:`\varepsilon`) given the input one.
++
++        :param eps_in: input quantum :math:`\varepsilon_{in}`.
++        :type  eps_in: :py:class:`torch.Tensor`
++        :return: output quantum :math:`\varepsilon_{out}`.
++        :rtype:  :py:class:`torch.Tensor`
++
++        """
++
++        if self.eps_out_static_b is None:
++            if self.quant_asymm_b:
++                eps_b = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++            else:
++                eps_b = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++            self.eps_out_static_b = eps_b * eps_in
++        return self.eps_out_static_b
++
+     def forward(self, input):
+         r"""Forward-prop function for PACT-quantized 2d-convolution.
+ 
+@@ -1131,14 +1285,28 @@
+                 W_quant = pact_quantize_asymm(self.weight, (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1), self.W_alpha, self.W_beta)
+             else:
+                 W_quant = pact_quantize_signed(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
+-        elif self.quantize_W and not self.deployment:
+-            if self.quant_asymm:
+-                eps = (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1)
+-                W_quant = pact_quantize_asymm_inference(self.weight, eps, torch.ceil(self.W_alpha/eps)*eps, torch.floor(self.W_beta/eps)*eps, train_loop=self.train_loop, train_loop_oldprec=self.train_loop_oldprec)
++        if self.training and self.quantize_b and not self.deployment:
++            if self.quant_asymm_b:
++                b_quant = pact_quantize_asymm(self.bias, (self.b_beta + self.b_alpha) / (2.0 ** (self.b_precision.get_bits()) - 1), self.b_alpha, self.b_beta)
+             else:
+-                W_quant = pact_quantize_signed_inference(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
++                b_quant = pact_quantize_signed(self.bias, 2 * self.b_alpha / (2.0 ** (self.b_precision.get_bits()) - 1), self.b_alpha)
++
++        elif (self.quantize_W or self.quantize_b) and not self.deployment:
++            if self.quantize_W:
++                if self.quant_asymm:
++                    eps = (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1)
++                    W_quant = pact_quantize_asymm_inference(self.weight, eps, torch.ceil(self.W_alpha/eps)*eps, torch.floor(self.W_beta/eps)*eps, train_loop=self.train_loop, train_loop_oldprec=self.train_loop_oldprec)
++                else:
++                    W_quant = pact_quantize_signed_inference(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
++            if self.quantize_b:
++                if self.quant_asymm_b:
++                    eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                    b_quant = pact_quantize_asymm_inference_bias(self.bias, eps, torch.ceil(self.b_alpha/eps)*eps, torch.floor(self.b_beta/eps)*eps, train_loop=self.train_loop, train_loop_oldprec_b=self.train_loop_oldprec_b)
++                else:
++                    b_quant = pact_quantize_signed_inference_bias(self.bias, 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1), self.b_alpha)
+         else:
+             W_quant = self.weight
++            b_quant = self.bias
+         # if input bias is present, padding should be performed using the input bias as padding value instead of 0
+         if self.deployment and self.padding is not None and self.bias is not None:
+             if type(self.padding) is not tuple and type(self.padding) is not list:
+@@ -1151,7 +1319,7 @@
+         y = torch.nn.functional.conv2d(
+             x_quant,
+             W_quant,
+-            self.bias, # typically nil
++            b_quant, # typically nil
+             self.stride,
+             self.padding if not self.deployment or self.bias is None else 0,
+             self.dilation,
+@@ -1178,9 +1346,11 @@
+         quantize_x=False,
+         quantize_W=True,
+         W_precision=None,
++        b_precision=None,
+         x_precision=None,
+         alpha=1.,
+         quant_asymm=True,
++        quant_asymm_b=True,
+         **kwargs
+     ):
+         r"""Constructor. Supports all arguments supported by :py:class:`torch.nn.Conv2d` plus additional ones.
+@@ -1207,26 +1377,39 @@
+             self.x_precision = Precision()
+         else:
+             self.x_precision = Precision(bits=x_precision.get_bits())
++        
++        if b_precision is None:
++            self.b_precision = Precision()
++        else:
++            self.b_precision = Precision(bits=b_precision.get_bits())
+ 
+         self.quantize_x = quantize_x
+         self.quantize_W = quantize_W
++        self.quantize_b = quantize_b
++        
+         super(PACT_Conv1d, self).__init__(in_channels, out_channels, kernel_size, **kwargs)
+         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+         self.W_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+         if quant_asymm:
+             self.W_beta  = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+-
++        self.b_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))    
++        if quant_asymm_b:
++            self.b_beta = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+         self.x_alpha = torch.nn.Parameter(torch.Tensor((2.0,)).to(device))
+         self.weight.data.uniform_(-1., 1.)
++        if self.bias is not None:
++            self.bias.data.uniform_(0., 0.)
+ 
+         # FIXME to implement: fix alpha,beta scaling factors for "beautiful" quantization in INT4,6,8
+ 
+         self.quant_asymm = quant_asymm
+-
++        self.quant_asymm_b = quant_asymm_b
+         self.train_loop = True
+         self.deployment = False
+         self.train_loop_oldprec = None
+         self.hardened = False
++        self.train_loop_oldprec_b = None
++        self.hardened_b = False
+ 
+     def reset_alpha_weights(self, use_max=True, nb_std=5., verbose=False, **kwargs):
+         r"""Resets :math:`\alpha` and :math:`\beta` parameters for weights.
+@@ -1276,6 +1459,7 @@
+         else:
+             eps = 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1)
+             self.weight.data = pact_quantize_signed_inference(self.weight, eps, self.W_alpha) / eps
++            self.weight.data = self.weight.data.round()
+ 
+     def prune_weights(self, threshold=0.1, eps=2**-9.):
+         # logging.info("[Pruning] tau=%.1e", threshold)
+@@ -1287,6 +1471,56 @@
+         # return np.count_nonzero(wc < eps)
+         return 0
+ 
++    def reset_alpha_bias(self, use_max=True, nb_std=5., verbose=False, **kwargs):
++        r"""Resets :math:`\alpha` and :math:`\beta` parameters for bias.
++
++        """
++
++        if not self.quant_asymm_b:
++            self.b_alpha.data[0] = self.bias.data.abs().max()
++        elif use_max:
++            self.b_alpha.data[0] = -self.bias.data.min()
++            self.b_beta.data [0] =  self.bias.data.max()
++        else:
++            self.b_alpha.data[0] = -self.bias.data.mean() + nb_std*self.bias.data.std()
++            self.b_beta.data[0]  =  self.bias.data.mean() + nb_std*self.bias.data.std()
++        if verbose:
++            logging.info("[Quant] b_alpha = %.5f" % self.b_alpha.data[0])
++            logging.info("[Quant] b_beta  = %.5f" % self.b_beta.data[0])
++
++
++    def harden_bias(self):
++        r"""Replaces the current value of bias tensors (full-precision, quantized on forward-prop) with the quantized value.
++
++        """
++
++        if not self.hardened_b:
++            # here, clipping parameters are also quantized in order to cope with the PACT variant utilized here.
++            # in this way, the ID version will be able to use only an integer displacement or none at all if
++            # symmetric bias are used
++            if self.quant_asymm_b:
++                self.reset_alpha_bias()
++                eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                self.bias.data = pact_quantize_asymm_inference_bias(self.bias, eps, torch.ceil(self.b_alpha/eps)*eps, torch.floor(self.b_beta/eps)*eps, train_loop=False, train_loop_oldprec_b=self.train_loop_oldprec_b)
++                self.reset_alpha_bias()
++            else: 
++                eps = (2*self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha)
++            self.hardened_b = True
++
++    def integerize_bias(self, **kwargs):
++        r"""Replaces the current value of bias tensors with the integer bias (i.e., the bias's quantized image).
++
++        """
++
++        if self.quant_asymm_b:
++            eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++            self.bias.data = pact_quantize_asymm_inference_bias(self.bias, eps, self.b_alpha, self.b_beta, train_loop=False) / eps
++        else:
++            eps = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++            self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha) / eps
++            self.bias.data = self.bias.data.round()
++
+     def get_output_eps(self, eps_in):
+         r"""Get the output quantum (:math:`\varepsilon`) given the input one.
+ 
+@@ -1302,6 +1536,21 @@
+             eps_W = 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1)
+         return eps_W * eps_in
+ 
++    def get_output_eps_b(self, eps_in):
++        r"""Get the output quantum (:math:`\varepsilon`) given the input one.
++
++        :param eps_in: input quantum :math:`\varepsilon_{in}`.
++        :type  eps_in: :py:class:`torch.Tensor`
++        :return: output quantum :math:`\varepsilon_{out}`.
++        :rtype:  :py:class:`torch.Tensor`
++
++        """
++        if self.quant_asymm_b:
++            eps_b = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++        else:
++            eps_b = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++        return eps_b * eps_in
++
+     def forward(self, input):
+         r"""Forward-prop function for PACT-quantized 1d-convolution.
+ 
+@@ -1322,12 +1571,27 @@
+                 W_quant = pact_quantize_signed_inference(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
+         else:
+             W_quant = self.weight
++
++        if self.training and self.quantize_b and not self.deployment:
++            if self.quant_asymm_b:
++                b_quant = pact_quantize_asymm(self.bias, (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1), self.b_alpha, self.b_beta)
++            else:
++                b_quant = pact_quantize_signed(self.bias, 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1), self.b_alpha)
++        elif self.quantize_b and not self.deployment:
++            if self.quant_asymm_b:
++                b_quant = pact_quantize_asymm_inference_bias(self.bias, (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1), self.b_alpha, self.b_beta, train_loop=self.train_loop)
++            else:
++                b_quant = pact_quantize_signed_inference_bias(self.bias, 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1), self.b_alpha)
++        else:
++            b_quant = self.bias
++
++    
+         if self.padding_mode == 'circular':
+             expanded_padding = ((self.padding[0] + 1) // 2, self.padding[0] // 2)
+             return torch.nn.functional.conv1d(torch.nn.functional.pad(input, expanded_padding, mode='circular'),
+-                            W_quant, self.bias, self.stride,
++                            W_quant, b_quant, self.stride,
+                             _single(0), self.dilation, self.groups)
+-        return torch.nn.functional.conv1d(input, W_quant, self.bias, self.stride,
++        return torch.nn.functional.conv1d(input, W_quant, b_quant, self.stride,
+                         self.padding, self.dilation, self.groups)
+ 
+ class PACT_Linear(torch.nn.Linear):
+@@ -1344,10 +1608,13 @@
+         out_features,
+         quantize_x=False,
+         quantize_W=True,
++        quantize_b=True,
+         W_precision=None,
++        b_precision=None,
+         x_precision=None,
+         alpha=1.,
+         quant_asymm=True,
++        quant_asymm_b=True,
+         quant_pc=False,
+         **kwargs
+     ):
+@@ -1355,6 +1622,11 @@
+             self.W_precision = Precision()
+         else:
+             self.W_precision = Precision(bits=W_precision.get_bits())
++        if b_precision is None:
++            self.b_precision = Precision()
++        else:
++            self.b_precision = Precision(bits=b_precision.get_bits())
++
+         if x_precision is None:
+             self.x_precision = Precision()
+         else:
+@@ -1362,21 +1634,30 @@
+ 
+         self.quantize_x = quantize_x
+         self.quantize_W = quantize_W
++        self.quantize_b = quantize_b
+         super(PACT_Linear, self).__init__(in_features, out_features, **kwargs)
+         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+         self.W_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+         if quant_asymm:
+             self.W_beta  = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
++        self.b_alpha = torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
++        if quant_asymm_b:
++            self.b_beta  =  torch.nn.Parameter(torch.Tensor((alpha,)).to(device))
+         self.x_alpha = torch.nn.Parameter(torch.Tensor((2.0,)).to(device))
+         self.weight.data.uniform_(-1., 1.)
+-
++        if self.bias is not None:
++            self.bias.data.uniform_(0,0) #check
++        
+         self.quant_asymm = quant_asymm
++        self.quant_asymm_b = quant_asymm_b
+         self.quant_pc    = quant_pc
+         
+         self.train_loop = True
+         self.deployment = False
+         self.train_loop_oldprec = None
+         self.hardened = False
++        self.train_loop_oldprec_b = None
++        self.hardened_b = False
+ 
+     def reset_alpha_weights(self, use_max=True, nb_std=5., verbose=False, **kwargs):
+         r"""Resets :math:`\alpha` and :math:`\beta` parameters for weights.
+@@ -1425,6 +1706,7 @@
+         else:
+             eps = 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1)
+             self.weight.data = pact_quantize_signed_inference(self.weight, eps, self.W_alpha) / eps
++            self.weight.data = self.weight.data.round()
+ 
+     def prune_weights(self, threshold=0.1, eps=2**-9.):
+         r"""Prunes the weights of the layer.
+@@ -1447,6 +1729,55 @@
+         logging.info("[Pruning] Pruned %d" % np.count_nonzero(wc < eps))
+         return np.count_nonzero(wc < eps)
+ 
++    def reset_alpha_bias(self, use_max=True, nb_std=5., verbose=False, **kwargs):
++        r"""Resets :math:`\alpha` and :math:`\beta` parameters for bias.
++
++        """
++
++        if not self.quant_asymm_b:
++            self.b_alpha.data[0] = self.bias.data.abs().max()
++        elif use_max:
++            self.b_alpha.data[0] = -self.bias.data.min()
++            self.b_beta.data [0] =  self.bias.data.max()
++        else:
++            self.b_alpha.data[0] = -self.bias.data.mean() + nb_std*self.bias.data.std()
++            self.b_beta.data[0]  =  self.bias.data.mean() + nb_std*self.bias.data.std()
++        if verbose:
++            logging.info("[Quant] b_alpha = %.5f" % self.b_alpha.data[0])
++            logging.info("[Quant] b_beta  = %.5f" % self.b_beta.data[0])
++
++    def harden_bias(self):
++        r"""Replaces the current value of bias tensors (full-precision, quantized on forward-prop) with the quantized value.
++
++        """
++
++        if not self.hardened_b:
++            # here, clipping parameters are also quantized in order to cope with the PACT variant utilized here.
++            # in this way, the ID version will be able to use only an integer displacement or none at all if
++            # symmetric bias are used
++            if self.quant_asymm_b:
++                self.reset_alpha_bias()
++                eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                self.bias.data = pact_quantize_asymm_inference_bias(self.bias, eps, torch.ceil(self.b_alpha/eps)*eps, torch.floor(self.b_beta/eps)*eps, train_loop=False, train_loop_oldprec_b=self.train_loop_oldprec_b)
++                self.reset_alpha_bias()
++            else: 
++                eps = (2*self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++                self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha)
++            self.hardened_b = True
++
++    def integerize_bias(self, **kwargs):
++        r"""Replaces the current value of bias tensors with the integer bias (i.e., the bias's quantized image).
++
++        """
++
++        if self.quant_asymm_b:
++            eps = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++            self.bias.data = pact_quantize_asymm_inference_bias(self.bias, eps, self.b_alpha, self.b_beta, train_loop=False) / eps
++        else:
++            eps = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++            self.bias.data = pact_quantize_signed_inference_bias(self.bias, eps, self.b_alpha) / eps
++            self.bias.data = self.bias.data.round()
++
+     def get_output_eps(self, eps_in):
+         r"""Get the output quantum (:math:`\varepsilon`) given the input one.
+ 
+@@ -1463,6 +1794,23 @@
+             eps_W = 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1)
+         return eps_W * eps_in
+ 
++    def get_output_eps_b(self, eps_in):
++        r"""Get the output quantum (:math:`\varepsilon`) given the input one.
++
++        :param eps_in: input quantum :math:`\varepsilon_{in}`.
++        :type  eps_in: :py:class:`torch.Tensor`
++        :return: output quantum :math:`\varepsilon_{out}`.
++        :rtype:  :py:class:`torch.Tensor`
++
++        """
++
++        if self.quant_asymm_b:
++            eps_b = (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1)
++        else:
++            eps_b = 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1)
++        return eps_b * eps_in
++
++
+     def forward(self, input):
+         r"""Forward-prop function for PACT-quantized linear layer.
+ 
+@@ -1480,14 +1828,29 @@
+                 W_quant = pact_quantize_asymm(self.weight, (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1), self.W_alpha, self.W_beta)
+             else:
+                 W_quant = pact_quantize_signed(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
+-        elif self.quantize_W and not self.deployment:
+-            if self.quant_asymm:
+-                W_quant = pact_quantize_asymm_inference(self.weight, (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1), self.W_alpha, self.W_beta, train_loop=self.train_loop)
++        if self.training and self.quantize_b and not self.deployment:
++            if self.quant_asymm_b:
++                b_quant = pact_quantize_asymm(self.bias, (self.b_beta + self.b_alpha) / (2.0 ** (self.b_precision.get_bits()) - 1), self.b_alpha, self.b_beta)
+             else:
+-                W_quant = pact_quantize_signed_inference(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
++                b_quant = pact_quantize_signed(self.bias, 2 * self.b_alpha / (2.0 ** (self.b_precision.get_bits()) - 1), self.b_alpha)
++        
++        elif (self.quantize_W or self.quantize_b) and not self.deployment:
++            if self.quantize_W:
++                if self.quant_asymm:
++                    W_quant = pact_quantize_asymm_inference(self.weight, (self.W_beta+self.W_alpha)/(2.0**(self.W_precision.get_bits())-1), self.W_alpha, self.W_beta, train_loop=self.train_loop)
++                else:
++                    W_quant = pact_quantize_signed_inference(self.weight, 2*self.W_alpha/(2.0**(self.W_precision.get_bits())-1), self.W_alpha)
++            if self.quantize_b:
++                if self.quant_asymm_b:
++                    b_quant = pact_quantize_asymm_inference_bias(self.bias, (self.b_beta+self.b_alpha)/(2.0**(self.b_precision.get_bits())-1), self.b_alpha, self.b_beta, train_loop=self.train_loop)
++                else:
++                    b_quant = pact_quantize_signed_inference_bias(self.bias, 2*self.b_alpha/(2.0**(self.b_precision.get_bits())-1), self.b_alpha)
++                
+         else:
+             W_quant = self.weight
+-        y = torch.nn.functional.linear(x_quant, W_quant, self.bias)
++            b_quant = self.bias
++     
++        y = torch.nn.functional.linear(x_quant, W_quant, b_quant)
+         if not self.training and self.quantize_W:
+             del W_quant
+         # y is returned non-quantized, as it is assumed to be quantized after BN
