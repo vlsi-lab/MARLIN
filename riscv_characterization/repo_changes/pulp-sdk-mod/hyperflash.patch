@@ -1,0 +1,11 @@
+--- pulp-sdk/tools/gap-configs/configs/devices/hyperflash.json	2023-10-04 18:05:49.049551519 +0200
++++ pulp-sdk-mod/tools/gap-configs/configs/devices/hyperflash.json	2023-10-04 18:00:38.782346444 +0200
+@@ -20,7 +20,7 @@
+       "partitions": {
+           "readfs": {
+               "type": "readfs",
+-              "enabled": false,
++              "enabled": true,
+               "files": []
+           },
+           "hostfs": {

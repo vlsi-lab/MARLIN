@@ -1,0 +1,102 @@
+--- pulp-sdk/tools/gapy/gen_flash_image.py	2023-10-04 18:05:49.075551620 +0200
++++ pulp-sdk-mod/tools/gapy/gen_flash_image.py	2023-10-04 18:00:38.782346444 +0200
+@@ -49,19 +49,19 @@
+ 
+ 
+ def dumpByteToSlm(file, addr, value):
+-    file.write("@%08X %02X\n" % (addr, value))
++    file.write("@%08X\n%02X\n" % (addr, value))
+ 
+ def dumpShortToSlm(file, addr, value):
+-    file.write("@%08X %04X\n" % (addr, value))
++    file.write("@%08X\n%04X\n" % (addr, value))
+ 
+ def dumpWordToSlm(file, addr, value):
+-    file.write("@%08X %08X\n" % (addr, value))
++    file.write("@%08X\n%08X\n" % (addr, value))
+ 
+ def dumpLongToSlm(file, addr, value):
+-    file.write("@%08X %016X\n" % (addr, value))
++    file.write("@%08X\n%016X\n" % (addr, value))
+ 
+ def dumpLongLongToSlm(file, addr, value):
+-    file.write("@%08X %032X\n" % (addr, value))
++    file.write("@%08X\n%032X\n" % (addr, value))
+ 
+ 
+ 
+@@ -115,6 +115,7 @@
+                                 aesIv = aesIv)
+         self.image = self.ssbl.dump()
+         self.partitionTableOffset = self.ssbl.partitionTableOffset
++        print("In gen_flash_image.py, partition_table_offset", self.partitionTableOffset)
+         return self.partitionTableOffset
+     
+     def appendPartitionTable(self, partitionTable):
+@@ -148,6 +149,7 @@
+         
+         with open(outputPath, 'w') as file:
+             self.buff = self.image
++            print("FLASH TYPE", self.flashType) #hyper
+             if self.flashType == 'mram':
+                 last_bytes = len(self.buff) & 0xF
+                 for i in range(0, 16 - last_bytes):
+@@ -295,7 +297,7 @@
+ def operationFunc(args, flash_config=None, system = None):
+ 
+     traces.info('Build flash image')
+-    
++    print('In gen_flash_image, Build flash image')
+     flashImage = FlashImage(sectorSize = args.blockSize, flashType = args.flashType)
+     encrypt = flash_config.get_child_bool('fs/encrypt')
+     aes_key = flash_config.get('fs/aes_key')
+@@ -306,7 +308,7 @@
+     #
+     endOfSSBLOffset = flashImage.appendBootloader(elf = args.boot_loader, encrypt = encrypt, aesKey = aes_key, aesIv = aes_iv)
+     traces.info("Partition boot loader size: 0x%X" % endOfSSBLOffset)
+-    
++    print("Partition boot loader size: 0x%X" % endOfSSBLOffset)
+     #
+     # Partition table
+     #
+@@ -316,6 +318,8 @@
+         partitionTableOffset = binary.align(endOfSSBLOffset, args.blockSize)
+         traces.info(
+             "No free space to store partition table at the end of the SSBL partition, adding padding untill the next sector 0x%X" % partitionTableOffset)
++        print(
++            "No free space to store partition table at the end of the SSBL partition, adding padding untill the next sector 0x%X" % partitionTableOffset)
+         flashImage.image.padToOffset(partitionTableOffset)
+     else:
+         partitionTableOffset = endOfSSBLOffset
+@@ -351,6 +355,7 @@
+ 
+         else:
+             traces.info('Partition table was provided from configuration file.')
++            print('gen_flash_image: Partition table was provided from configuration file.')
+             config_partitions = {}
+             table = gen_partition.PartitionTable(md5Sum = True)
+             offset = partitionTableOffset + partition.MAX_PARTITION_TABLE_SIZE
+@@ -361,6 +366,7 @@
+                 type_name = partition_config.get_str('type')
+                 size = os.path.getsize(path)
+                 traces.info("Creating partition (name: %s, type: %s, path: %s, offset: 0x%x, size: 0x%x" % (name, type_name, path, offset, size))
++                print("Creating partition (name: %s, type: %s, path: %s, offset: 0x%x, size: 0x%x" % (name, type_name, path, offset, size))
+ 
+                 part = partition.PartitionDefinition(
+                     name = name,
+@@ -439,6 +445,7 @@
+             offset = lfsPartition.offset + lfsPartition.size
+         
+     traces.info('Verifying table...')
++    print('gen_flash_image:Verifying table...')
+     traces.info(table.to_csv(simple_formatting = False))
+     table.verify(partitionTableOffset = partitionTableOffset, flashSectorSize = args.blockSize,
+                  flashSize = args.flashSize)
+@@ -484,6 +491,7 @@
+     if args.flashStimuliFormat is not None:
+         file_name = args.flashStimuliFile
+         traces.info("\nWritting output stimuli to %s" %( file_name))
++        print("\nWritting output stimuli to %s" %( file_name))
+         flashImage.writeStimuli(file_name)
+ 
+ 

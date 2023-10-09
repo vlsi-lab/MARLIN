@@ -1,0 +1,11 @@
+--- pulp-sdk/rtos/pulpos/common/rules/pulpos/default_rules.mk	2023-10-04 18:05:49.145551892 +0200
++++ pulp-sdk-mod/rtos/pulpos/common/rules/pulpos/default_rules.mk	2023-10-04 18:00:38.781346440 +0200
+@@ -345,6 +345,8 @@
+ 
+ GAPY = gapy
+ 
++GAPY_TARGET_OPT = --target=$(GAPY_TARGET)
++	
+ image:
+ 	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
+ 

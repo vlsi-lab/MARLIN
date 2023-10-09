@@ -1,0 +1,11 @@
+--- pulp-sdk/tools/gapy/runner/rtl/rtl_runner.py	2023-10-04 18:05:49.076551624 +0200
++++ pulp-sdk-mod/tools/gapy/runner/rtl/rtl_runner.py	2023-10-04 18:00:38.783346448 +0200
+@@ -238,7 +238,7 @@
+         with open(filename, 'w') as file:
+             for key in sorted(self.mem.keys()):
+                 if format == 'slm':
+-                    file.write('@%X %0*X\n' % (int(key), width*2, self.mem.get(key)))
++                    file.write('@%X\n%0*X\n' % (int(key), width*2, self.mem.get(key)))
+                 else:
+                     file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
+ 
