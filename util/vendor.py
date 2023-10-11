@@ -521,7 +521,7 @@ def clone_git_repo(repo_url, clone_dir, rev='master'):
     log.info('Cloning upstream repository %s @ %s', repo_url, rev)
 
     # Clone the whole repository
-    cmd = ['git', 'clone', '--no-single-branch']
+    cmd = ['git', 'clone', '--no-single-branch', '--recurse-submodules']
     if not verbose:
         cmd += ['-q']
     cmd += [repo_url, str(clone_dir)]
