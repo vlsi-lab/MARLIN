@@ -13,28 +13,33 @@ It is built from 4 components:
 ## Install instructions
 Execute the following commands to install 
 Clone the repository with 
-> git clone https://github.com/vlsi-lab/MARLIN.git
-
+```bash
+git clone https://github.com/vlsi-lab/MARLIN.git
+```
 or 
-
-> git clone git@github.com:vlsi-lab/MARLIN.git
-
+```bash
+git clone git@github.com:vlsi-lab/MARLIN.git
+```
 Then open a terminal and intall ninja-build
-> sudo apt update
->
-> sudo apt install ninja-build
+```bash
+sudo apt update
 
+sudo apt install ninja-build
+```
 Install marlin environment (requires anaconda or miniconda https://www.anaconda.com/download)
-> cd MARLIN
->
-> conda env create -f marlin.yml
+```bash
+cd MARLIN
 
+conda env create -f marlin.yml
+```
 Inside each folder there are README files with additional information useful to install additional components, execute the code and replicate the data. 
 
 In order to use the multipliers LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip at https://www.7-zip.org/download.html
 When launching any python file, remember to keep the folder hierarchy as defined in this repository.
 You can add the folders to the PYTHONPATH with the following command:
-> export PYTHONPATH="${PYTHONPATH}:your_path_to_marlin/MARLIN/:your_path_to_marlin/MARLIN/neural_networks:your_path_to_marlin/MARLIN/benchmark_CIFAR10:your_path_to_marlin/MARLIN/approximate_multiplier$:your_path_to_marlin/MARLIN/riscv_characterization"$
+```bash
+export PYTHONPATH="${PYTHONPATH}:your_path_to_marlin/MARLIN/:your_path_to_marlin/MARLIN/neural_networks:your_path_to_marlin/MARLIN/benchmark_CIFAR10:your_path_to_marlin/MARLIN/approximate_multiplier$:your_path_to_marlin/MARLIN/riscv_characterization"$
+```
 
 Support to verify the experimental results obtained on the modified version of PULP Platform is provided. 
 Execute the command:
