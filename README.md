@@ -36,5 +36,12 @@ When launching any python file, remember to keep the folder hierarchy as defined
 You can add the folders to the PYTHONPATH with the following command:
 > export PYTHONPATH="${PYTHONPATH}:your_path_to_marlin/MARLIN/:your_path_to_marlin/MARLIN/neural_networks:your_path_to_marlin/MARLIN/benchmark_CIFAR10:your_path_to_marlin/MARLIN/approximate_multiplier$:your_path_to_marlin/MARLIN/riscv_characterization"$
 
+Support to verify the experimental results obtained on the modified version of PULP Platform is provided. 
+Execute the command:
+```bash
+make build
+```
+This command will setup the required scripts and repository. Further information on the configuration can be found in the folder `./riscv_characterization`.
+
 ## Citation
 If you used this code in your work, consider adding a reference to our paper **editorial information to be added after publishing**
