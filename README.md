@@ -19,7 +19,7 @@ or
 
 > git clone git@github.com:vlsi-lab/MARLIN.git
 
-Then open a terminal and intall ninja-build
+Then open a terminal and install ninja-build
 > sudo apt update
 >
 > sudo apt install ninja-build

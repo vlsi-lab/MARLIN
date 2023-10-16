@@ -5,7 +5,7 @@ import random
 from neural_networks.adapt.approx_layers import axx_layers as approxNN
 from neural_networks.CIFAR10.resnet import ResidualModule
 from neural_networks.utils import evaluate_test_accuracy
-import riscv_characterization.nemo
+# from riscv_characterization import nemo
 
 # TODO: controllare dependencies e isinstance che ci sia nemo dappertutto
 def encode_chromosome(model, n_appr_levels = 255, axx_linear=False):
@@ -15,13 +15,15 @@ def encode_chromosome(model, n_appr_levels = 255, axx_linear=False):
     n_layers = 0
     for name, module in model._modules.items():
         # or isinstance(module, nemo.quant.pact.PACT_Conv2d)
-        if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
-            n_layers += 1
+        # if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+        if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d):
+                n_layers += 1
         elif isinstance(module, nn.Sequential):
             for sub_name, sub_module in module._modules.items():
                 if isinstance(sub_module, ResidualModule):
                     for subsub_name, subsub_module in sub_module._modules.items():
-                        if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+                        # if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+                        if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d):
                             n_layers += 1
         if axx_linear:
             if isinstance(module, nn.Linear) or isinstance(module, approxNN.AdaPT_Linear):
@@ -57,7 +59,8 @@ def list_mult_per_layer(model, imsize=(1,3,32,32), axx_linear=False):
     with torch.no_grad():
         out = model(in_t)
     for name, module in model._modules.items():
-        if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+        # if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+        if isinstance(module, nn.Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d):
             wgt = module.weight.shape
             act = module.data_shape
             mult = wgt[0] * wgt[1] * wgt[2] * wgt[3] * act[2] * act[3]
@@ -67,7 +70,8 @@ def list_mult_per_layer(model, imsize=(1,3,32,32), axx_linear=False):
             for sub_name, sub_module in module._modules.items():
                 if isinstance(sub_module, ResidualModule):
                     for subsub_name, subsub_module in sub_module._modules.items():
-                        if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+                        # if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+                        if isinstance(subsub_module, nn.Conv2d) or isinstance(subsub_module, approxNN.AdaPT_Conv2d):
                             wgt = subsub_module.weight.shape
                             act = subsub_module.data_shape
                             mult = wgt[0] * wgt[1] * wgt[2] * wgt[3] * act[2] * act[3]
