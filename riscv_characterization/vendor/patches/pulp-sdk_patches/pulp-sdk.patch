@@ -1,0 +1,221 @@
+diff --git a/configs/common.sh b/configs/common.sh
+index 9f17921..7d7d167 100644
+--- a/configs/common.sh
++++ b/configs/common.sh
+@@ -29,6 +29,7 @@ export PYTHONPATH=$INSTALL_DIR/python:$PYTHONPATH
+ 
+ # Gapy
+ export PATH=$PULP_SDK_HOME/tools/gapy:$PATH
++export PYTHONPATH=$PULP_SDK_HOME/tools/gap-configs/python:$PYTHONPATH
+ export PYTHONPATH=$PULP_SDK_HOME/tools/gapy:$PYTHONPATH
+ export PULP_CONFIGS_PATH=$PULP_SDK_HOME/tools/gap-configs/configs:$PULP_CONFIGS_PATH
+ 
+diff --git a/rtos/pulpos/common/rules/pulpos/default_rules.mk b/rtos/pulpos/common/rules/pulpos/default_rules.mk
+index 99d5d52..68584fa 100644
+--- a/rtos/pulpos/common/rules/pulpos/default_rules.mk
++++ b/rtos/pulpos/common/rules/pulpos/default_rules.mk
+@@ -345,6 +345,8 @@ else
+ 
+ GAPY = gapy
+ 
++GAPY_TARGET_OPT = --target=$(GAPY_TARGET)
++	
+ image:
+ 	gapy $(GAPY_TARGET_OPT) --platform=$(platform) --work-dir=$(TARGET_BUILD_DIR) $(config_args) $(gapy_args) run --image --binary=$(TARGETS) $(runner_args)
+ 
+diff --git a/tools/gap-configs/configs/devices/hyperflash.json b/tools/gap-configs/configs/devices/hyperflash.json
+index 2fe4018..9b728be 100644
+--- a/tools/gap-configs/configs/devices/hyperflash.json
++++ b/tools/gap-configs/configs/devices/hyperflash.json
+@@ -20,7 +20,7 @@
+       "partitions": {
+           "readfs": {
+               "type": "readfs",
+-              "enabled": false,
++              "enabled": true,
+               "files": []
+           },
+           "hostfs": {
+diff --git a/tools/gap-configs/configs/tools/runner/runner.json b/tools/gap-configs/configs/tools/runner/runner.json
+index b783684..3ac2f05 100644
+--- a/tools/gap-configs/configs/tools/runner/runner.json
++++ b/tools/gap-configs/configs/tools/runner/runner.json
+@@ -3,14 +3,14 @@
+     "py-stack": "Display the full python stack in case an exception is caught"
+   },
+   "binaries": [],
+-  "verbose": false,
++  "verbose": true,
+   "boot-mode": "jtag",
+   "use_tb_comps": false,
+   "use_external_tb": false,
+   "active_tb_comps": [],
+   "py-stack": false,
+   "boot_from_flash": false,
+-  "flash_type": "spi",
++  "flash_type": "hyper",
+   "flash_slm_file": "slm_files/flash_stim.slm",
+   "rtl_simulator": "vsim",
+   "simulator": "vsim",
+diff --git a/tools/gapy/configs/platforms/rtl.json b/tools/gapy/configs/platforms/rtl.json
+index e3b82f5..5f82c4f 100644
+--- a/tools/gapy/configs/platforms/rtl.json
++++ b/tools/gapy/configs/platforms/rtl.json
+@@ -4,7 +4,7 @@
+     "runner_module": "runner.rtl.rtl_runner",
+ 
+     "verbose": true,
+-    "simulator": "xcelium",
++    "simulator": "vsim",
+     "mode": "shell",
+     "args": [],
+     "svcf_file": [],
+diff --git a/tools/gapy/gen_flash_image.py b/tools/gapy/gen_flash_image.py
+index 5c87ffa..4f0bad4 100755
+--- a/tools/gapy/gen_flash_image.py
++++ b/tools/gapy/gen_flash_image.py
+@@ -49,19 +49,19 @@ if PYTHON2:
+ 
+ 
+ def dumpByteToSlm(file, addr, value):
+-    file.write("@%08X %02X\n" % (addr, value))
++    file.write("@%08X\n%02X\n" % (addr, value))
+ 
+ def dumpShortToSlm(file, addr, value):
+-    file.write("@%08X %04X\n" % (addr, value))
++    file.write("@%08X\n%04X\n" % (addr, value))
+ 
+ def dumpWordToSlm(file, addr, value):
+-    file.write("@%08X %08X\n" % (addr, value))
++    file.write("@%08X\n%08X\n" % (addr, value))
+ 
+ def dumpLongToSlm(file, addr, value):
+-    file.write("@%08X %016X\n" % (addr, value))
++    file.write("@%08X\n%016X\n" % (addr, value))
+ 
+ def dumpLongLongToSlm(file, addr, value):
+-    file.write("@%08X %032X\n" % (addr, value))
++    file.write("@%08X\n%032X\n" % (addr, value))
+ 
+ 
+ 
+@@ -115,6 +115,7 @@ class FlashImage(object):
+                                 aesIv = aesIv)
+         self.image = self.ssbl.dump()
+         self.partitionTableOffset = self.ssbl.partitionTableOffset
++        print("In gen_flash_image.py, partition_table_offset", self.partitionTableOffset)
+         return self.partitionTableOffset
+     
+     def appendPartitionTable(self, partitionTable):
+@@ -148,6 +149,7 @@ class FlashImage(object):
+         
+         with open(outputPath, 'w') as file:
+             self.buff = self.image
++            print("FLASH TYPE", self.flashType) #hyper
+             if self.flashType == 'mram':
+                 last_bytes = len(self.buff) & 0xF
+                 for i in range(0, 16 - last_bytes):
+@@ -295,7 +297,7 @@ def appendArgs(parser: argparse.ArgumentParser, flashConfig: js.config) -> None:
+ def operationFunc(args, flash_config=None, system = None):
+ 
+     traces.info('Build flash image')
+-    
++    print('In gen_flash_image, Build flash image')
+     flashImage = FlashImage(sectorSize = args.blockSize, flashType = args.flashType)
+     encrypt = flash_config.get_child_bool('fs/encrypt')
+     aes_key = flash_config.get('fs/aes_key')
+@@ -306,7 +308,7 @@ def operationFunc(args, flash_config=None, system = None):
+     #
+     endOfSSBLOffset = flashImage.appendBootloader(elf = args.boot_loader, encrypt = encrypt, aesKey = aes_key, aesIv = aes_iv)
+     traces.info("Partition boot loader size: 0x%X" % endOfSSBLOffset)
+-    
++    print("Partition boot loader size: 0x%X" % endOfSSBLOffset)
+     #
+     # Partition table
+     #
+@@ -316,6 +318,8 @@ def operationFunc(args, flash_config=None, system = None):
+         partitionTableOffset = binary.align(endOfSSBLOffset, args.blockSize)
+         traces.info(
+             "No free space to store partition table at the end of the SSBL partition, adding padding untill the next sector 0x%X" % partitionTableOffset)
++        print(
++            "No free space to store partition table at the end of the SSBL partition, adding padding untill the next sector 0x%X" % partitionTableOffset)
+         flashImage.image.padToOffset(partitionTableOffset)
+     else:
+         partitionTableOffset = endOfSSBLOffset
+@@ -351,6 +355,7 @@ def operationFunc(args, flash_config=None, system = None):
+ 
+         else:
+             traces.info('Partition table was provided from configuration file.')
++            print('gen_flash_image: Partition table was provided from configuration file.')
+             config_partitions = {}
+             table = gen_partition.PartitionTable(md5Sum = True)
+             offset = partitionTableOffset + partition.MAX_PARTITION_TABLE_SIZE
+@@ -361,6 +366,7 @@ def operationFunc(args, flash_config=None, system = None):
+                 type_name = partition_config.get_str('type')
+                 size = os.path.getsize(path)
+                 traces.info("Creating partition (name: %s, type: %s, path: %s, offset: 0x%x, size: 0x%x" % (name, type_name, path, offset, size))
++                print("Creating partition (name: %s, type: %s, path: %s, offset: 0x%x, size: 0x%x" % (name, type_name, path, offset, size))
+ 
+                 part = partition.PartitionDefinition(
+                     name = name,
+@@ -439,6 +445,7 @@ def operationFunc(args, flash_config=None, system = None):
+             offset = lfsPartition.offset + lfsPartition.size
+         
+     traces.info('Verifying table...')
++    print('gen_flash_image:Verifying table...')
+     traces.info(table.to_csv(simple_formatting = False))
+     table.verify(partitionTableOffset = partitionTableOffset, flashSectorSize = args.blockSize,
+                  flashSize = args.flashSize)
+@@ -484,6 +491,7 @@ def operationFunc(args, flash_config=None, system = None):
+     if args.flashStimuliFormat is not None:
+         file_name = args.flashStimuliFile
+         traces.info("\nWritting output stimuli to %s" %( file_name))
++        print("\nWritting output stimuli to %s" %( file_name))
+         flashImage.writeStimuli(file_name)
+ 
+ 
+diff --git a/tools/gapy/rules/flash.mk b/tools/gapy/rules/flash.mk
+index 0fd3a20..cb5779c 100644
+--- a/tools/gapy/rules/flash.mk
++++ b/tools/gapy/rules/flash.mk
+@@ -49,7 +49,7 @@ FLASH_IMAGE ?= $(BUILDDIR)/$(FLASH_IMAGE_NAME)
+ # Runner hack to flash image
+ #
+ RAW_IMAGE_PLPBRIDGE_FLAGS = -i $(FLASH_IMAGE)
+-
++@echo"flash.mk builddir=$(BUILDDIR)"
+ #
+ # Partition table
+ #
+diff --git a/tools/gapy/runner/rtl/rtl_runner.py b/tools/gapy/runner/rtl/rtl_runner.py
+index 3c1b38c..41e78f3 100644
+--- a/tools/gapy/runner/rtl/rtl_runner.py
++++ b/tools/gapy/runner/rtl/rtl_runner.py
+@@ -238,7 +238,7 @@ class Runner(runner.default_runner.Runner):
+         with open(filename, 'w') as file:
+             for key in sorted(self.mem.keys()):
+                 if format == 'slm':
+-                    file.write('@%X %0*X\n' % (int(key), width*2, self.mem.get(key)))
++                    file.write('@%X\n%0*X\n' % (int(key), width*2, self.mem.get(key)))
+                 else:
+                     file.write('%X_%0*X\n' % (int(key), width*2, self.mem.get(key)))
+ 
+diff --git a/tools/gapy/targets/pulp.json b/tools/gapy/targets/pulp.json
+index 1bbf859..b4c6423 100644
+--- a/tools/gapy/targets/pulp.json
++++ b/tools/gapy/targets/pulp.json
+@@ -15,12 +15,11 @@
+ 
+     "runner": {
+         "flash_devices": [
+-          "target/board/devices/flash",
+-          "target/board/devices/spiflash"
++          "target/board/devices/flash"
+         ],
+         "boot": {
+             "mode": "flash",
+-            "device": "target/board/devices/spiflash"
++            "device": "target/board/devices/flash"
+         }
+     }
+ }

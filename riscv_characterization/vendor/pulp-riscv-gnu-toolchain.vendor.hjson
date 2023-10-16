@@ -1,0 +1,24 @@
+{
+  name: "pulp-riscv-gnu-toolchain",
+  target_dir: "pulp-riscv-gnu-toolchain",
+
+  upstream: {
+    url: "https://github.com/pulp-platform/pulp-riscv-gnu-toolchain.git",
+    rev: "49dea1915979fdf91eb2ad4a8873e4cd88a6b811",
+  },
+
+  patch_dir: "./patches/pulp-riscv-gnu-toolchain_patches/",
+
+  exclude_from_upstream: [
+    "ci",
+    "example_tb",
+    ".github",
+    "CONTRIBUTING.md",
+    "Bender.yml",
+    ".gitlab-ci.yml",
+    ".dir-locals.el",
+    "docs",
+    "rtl/vendor",
+    "scripts",
+  ]
+}

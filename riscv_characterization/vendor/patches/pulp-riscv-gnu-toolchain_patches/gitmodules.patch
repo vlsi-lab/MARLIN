@@ -1,0 +1,13 @@
+diff --git a/.gitmodules b/.gitmodules
+index ac90db8..ff61d4f 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -1,6 +1,7 @@
+ [submodule "riscv-binutils-gdb"]
+ 	path = riscv-binutils-gdb
+-	url = https://github.com/pulp-platform/pulp-riscv-binutils-gdb.git
++  url = https://github.com/flague/pulp-riscv-binutils-gdb.git
++  branch = marlin
+ [submodule "riscv-gcc"]
+ 	path = riscv-gcc
+ 	url = https://github.com/pulp-platform/pulp-riscv-gcc.git

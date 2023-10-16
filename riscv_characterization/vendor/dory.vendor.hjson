@@ -1,0 +1,22 @@
+{
+  name: "dory",
+  target_dir: "dory",
+
+  upstream: {
+    url: "https://github.com/flague/dory.git",
+    rev: "marlin",
+  },
+  
+  exclude_from_upstream: [
+    "ci",
+    ".github",
+    "example_tb",
+    "CONTRIBUTING.md",
+    "Bender.yml",
+    ".gitlab-ci.yml",
+    ".dir-locals.el",
+    "docs",
+    "rtl/vendor",
+    "scripts",
+  ]
+}

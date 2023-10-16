@@ -1,0 +1,16 @@
+[submodule "riscv-binutils-gdb"]
+	path = riscv-binutils-gdb
+  url = https://github.com/flague/pulp-riscv-binutils-gdb.git
+  branch = marlin
+[submodule "riscv-gcc"]
+	path = riscv-gcc
+	url = https://github.com/pulp-platform/pulp-riscv-gcc.git
+[submodule "riscv-glibc"]
+	path = riscv-glibc
+	url = https://github.com/riscv/riscv-glibc.git
+[submodule "riscv-dejagnu"]
+	path = riscv-dejagnu
+	url = https://github.com/riscv/riscv-dejagnu.git
+[submodule "riscv-newlib"]
+	path = riscv-newlib
+	url = https://github.com/pulp-platform/pulp-riscv-newlib.git
