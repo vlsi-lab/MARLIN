@@ -16,24 +16,13 @@ Clone the repository with
 ```bash
 git clone https://github.com/vlsi-lab/MARLIN.git
 ```
-or 
-<<<<<<< HEAD
-
-> git clone git@github.com:vlsi-lab/MARLIN.git
-
-Then open a terminal and install ninja-build
-> sudo apt update
->
-> sudo apt install ninja-build
-=======
+or
 ```bash
 git clone git@github.com:vlsi-lab/MARLIN.git
 ```
 Then open a terminal and intall ninja-build
 ```bash
 sudo apt update
->>>>>>> ed4bcd6d57ccc72ea9af765e7147a49769bf775d
-
 sudo apt install ninja-build
 ```
 Install marlin environment (requires anaconda or miniconda https://www.anaconda.com/download)
