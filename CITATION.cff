@@ -16,11 +16,15 @@ authors:
 - family-names: "Martina"
   given-names: "Maurizio"
   orcid: "https://orcid.org/0000-0002-3069-0319"
-
-title: "MARLIN: a Co-design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge "
-version:  
-doi:  
-date-released:  
+preferred-citation:
+  type: article
+doi: 10.1109/TCSI.2024.3365952
 url: "https://github.com/vlsi-lab/MARLIN"
-
-
+title: "MARLIN: a Co-design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge "
+  journal: "IEEE Transactions on Circuits and Systems I: Regular Papers"
+  month: March
+  start: 1 
+  end: 14 
+  issue: tbd
+  volume: tbd
+  year: 2024
