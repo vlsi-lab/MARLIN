@@ -1,6 +1,6 @@
 ![](https://raw.githubusercontent.com/vlsi-lab/MARLIN/main/marlin_logo.png)
 # About
-This repository contains the code used in the research paper "**MARLIN: a Co-design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge**".
+This repository contains the code used in the research paper "**MARLIN: a Co-design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge**", published in "IEEE Transactions on Circuits and Systems I: Regular Papers".
 The code can be used as it is to reproduce the results presented in the paper.
 
 MARLIN is a methodology that enables the implementation of approximate neural networks (NNs) on a RISC-V core.
@@ -48,4 +48,15 @@ make build
 This command will setup the required scripts and repository. Further information on the configuration can be found in the folder `./riscv_characterization`.
 
 ## Citation
-If you used this code in your work, consider adding a reference to our paper **editorial information to be added after publishing**
+If you used this code in your work, consider adding a reference to our paper 
+```
+@ARTICLE{marlin,
+  author={Guella, Flavia and Valpreda, Emanuele and Caon, Michele and Masera, Guido and Martina, Maurizio},
+  journal={IEEE Transactions on Circuits and Systems I: Regular Papers}, 
+  title={{MARLIN}: a Co-design {M}ethodology for {A}pproximate {R}econfigurab{L}e {I}nference of {N}eural Networks at the Edge }, 
+  year={2024},
+  volume={tbd},
+  number={tbd},
+  pages={tbd},
+  doi={10.1109/TCSI.2024.3365952}}
+```
