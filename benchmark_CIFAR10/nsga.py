@@ -68,7 +68,6 @@ def main():
         file = open(pkl_repo + params.neural_network +'_backup_'+ str(params.generations) + '_' + str(params.population) + '_Pc' + str(int(params.crossover_probability*10)) +'_Pm' + str(int(params.mutation_probability*10)) + '_seed1' + '.pkl', 'rb')
         last_design = pickle.load(file)
         file.close()
-        # Ng = Ng - last_design['current_gen']
 
     class ProblemWrapper(Problem):
         def _evaluate(self, designs, out, *args, **kwargs):
@@ -115,7 +114,6 @@ def main():
 
             out['F'] = np.column_stack([ np.array(res1), np.array(res2)])
             self.data['current_gen'] += 1
-    # start time
     start_time = time.time()
 
     if params.neural_network == 'mnist' or params.neural_network == "fashionmnist":
@@ -158,16 +156,13 @@ def main():
 
     norm_power_file = './benchmark_CIFAR10/mult_energy.txt'
 
-    ## define the problem
     n_appr_levels, n_levels = GA_utils.encode_chromosome(model, axx_linear=params.axx_linear, n_appr_levels=params.axx_levels)
     print(n_appr_levels, n_levels)
-    xl = 0  #lista di n_levels elementi, contiene il lower limit di ogni variabile,
-    #sono n_levels moltiplicatori, quindi n_levels variabili con valori da 0 a 255
+    xl = 0  
     mult_per_layer = GA_utils.list_mult_per_layer(model, imsize=imsize, axx_linear=params.axx_linear)
 
     power_list = GA_utils.mult_power_list(norm_power_file)
     max_power = GA_utils.max_power_net(mult_per_layer, power_list)
-    # It is a bit slow since we collect histograms on CPU
 
     test_loss, test_acc = evaluate_test_accuracy(test_dataloader, model, device='cpu')
     print(f'Baseline test accuracy: {test_acc}')
