@@ -6,9 +6,9 @@ The code can be used as it is to reproduce the results presented in the paper.
 MARLIN is a methodology that enables the implementation of approximate neural networks (NNs) on a RISC-V core.
 It is built from 4 components:
 - A runtime reconfigurable multiplier with 256 approximation levels, each one with its own error distribution and average power.
-- A modified RISC-V core, with the multiplier inserted in the execution stage and the  
-- A modified PULP toolchain, with automatic emb
-- A search algorithm based on NSGA-II that evaluate thousands of approxximate NNs and select those with the best energy/accuracy trade-off.
+- A modified RISC-V core, with the multiplier inserted in the execution stage. 
+- A modified PULP toolchain, with approximation control automatically embedded in the compiled code.
+- A search algorithm based on NSGA-II that evaluates thousands of approxximate NNs and selects those with the best energy/accuracy trade-off.
 
 ## Install instructions
 Execute the following commands to install 
@@ -33,7 +33,7 @@ conda env create -f marlin.yml
 ```
 Inside each folder there are README files with additional information useful to install additional components, execute the code and replicate the data. 
 
-In order to use the multipliers LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip at https://www.7-zip.org/download.html
+In order to use the multiplier LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip at https://www.7-zip.org/download.html
 When launching any python file, remember to keep the folder hierarchy as defined in this repository.
 You can add the folders to the PYTHONPATH with the following command:
 ```bash
@@ -53,10 +53,10 @@ If you used this code in your work, consider adding a reference to our paper
 @ARTICLE{marlin,
   author={Guella, Flavia and Valpreda, Emanuele and Caon, Michele and Masera, Guido and Martina, Maurizio},
   journal={IEEE Transactions on Circuits and Systems I: Regular Papers}, 
-  title={{MARLIN}: a Co-design {M}ethodology for {A}pproximate {R}econfigurab{L}e {I}nference of {N}eural Networks at the Edge }, 
+  title={MARLIN: A Co-Design Methodology for Approximate ReconfigurabLe Inference of Neural Networks at the Edge}, 
   year={2024},
-  volume={tbd},
-  number={tbd},
-  pages={tbd},
+  volume={71},
+  number={5},
+  pages={2105-2118},
   doi={10.1109/TCSI.2024.3365952}}
 ```
