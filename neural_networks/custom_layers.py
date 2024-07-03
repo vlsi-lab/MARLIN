@@ -10,11 +10,11 @@ class Conv2d(nn.Conv2d):
         self.act_bit = act_bit  # activation precision
         self.weight_bit = weight_bit  # weight precision
         self.bias_bit = bias_bit  # bias precision
-        self.min_v_w = - 2 ** (self.weight_bit - 1) + 1
+        self.min_v_w = - 2 ** (self.weight_bit - 1)
         self.max_v_w = 2 ** (self.weight_bit - 1) - 1
-        self.min_v_b = - 2 ** (self.bias_bit - 1) + 1
+        self.min_v_b = - 2 ** (self.bias_bit - 1)
         self.max_v_b = 2 ** (self.bias_bit - 1) - 1
-        self.min_v_a = - 2 ** (self.act_bit - 1) + 1
+        self.min_v_a = - 2 ** (self.act_bit - 1)
         self.max_v_a = 2 ** (self.act_bit - 1) - 1
         torch.nn.init.kaiming_normal_(self.weight)  # init weight
         self.quantize = quantize_tensor.apply
@@ -46,11 +46,11 @@ class Linear(nn.Linear):
         self.act_bit = act_bit  # activation precision
         self.weight_bit = weight_bit  # weight precision
         self.bias_bit = bias_bit  # bias precision
-        self.min_v_w = - 2 ** (self.weight_bit - 1) + 1
+        self.min_v_w = - 2 ** (self.weight_bit - 1)
         self.max_v_w = 2 ** (self.weight_bit - 1) - 1
-        self.min_v_b = - 2 ** (self.bias_bit - 1) + 1
+        self.min_v_b = - 2 ** (self.bias_bit - 1)
         self.max_v_b = 2 ** (self.bias_bit - 1) - 1
-        self.min_v_a = - 2 ** (self.act_bit - 1) + 1
+        self.min_v_a = - 2 ** (self.act_bit - 1)
         self.max_v_a = 2 ** (self.act_bit - 1) - 1
         self.quantize = quantize_tensor.apply
         torch.nn.init.kaiming_normal_(self.weight)  # init weight
@@ -76,7 +76,7 @@ class BatchNorm2d(nn.Module):  # quantized batch norm
     def __init__(self, num_features, momentum=0.9, eps=1e-5, freeze_norm=False, batch_norm_bit=16):
         super(BatchNorm2d, self).__init__()
         self.batch_norm_bit = batch_norm_bit  # all the batchnorm's parameters are quantized with the same precision
-        self.min_v = - 2 ** (self.batch_norm_bit - 1) + 1
+        self.min_v = - 2 ** (self.batch_norm_bit - 1)
         self.max_v = 2 ** (self.batch_norm_bit - 1) - 1
 
         # Batch norm parameters
