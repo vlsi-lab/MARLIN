@@ -37,7 +37,8 @@ In order to use the multiplier LUTs and pre-trained neural networks, it is neces
 When launching any python file, remember to keep the folder hierarchy as defined in this repository.
 You can add the folders to the PYTHONPATH with the following command:
 ```bash
-export PYTHONPATH="${PYTHONPATH}:your_path_to_marlin/MARLIN/:your_path_to_marlin/MARLIN/neural_networks:your_path_to_marlin/MARLIN/benchmark_CIFAR10:your_path_to_marlin/MARLIN/approximate_multiplier$:your_path_to_marlin/MARLIN/riscv_characterization"$
+cd MARLIN
+export PYTHONPATH="${PYTHONPATH}:./:./neural_networks:./benchmark_CIFAR10:./approximate_multiplier:./riscv_characterization"
 ```
 
 Support to verify the experimental results obtained on the modified version of PULP Platform is provided. 
