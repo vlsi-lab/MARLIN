@@ -184,6 +184,84 @@ class AdaPT_Conv2d_Function(torch.autograd.Function):
 
         return grad_input, grad_weight, grad_bias, None, None, None, None, None, None, None, None, None
 
+class AdaPT_Conv2d_Function_nemo(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, input, weight, kernel_size, out_channels, bias_, axx_conv2d_kernel, bias=None, stride=1, padding=0, dilation=1, groups=1, padding_mode = 'zeros', act_bit = 9, weight_bit=9, bias_bit=8):
+        #ctx.save_for_backward(input, weight, bias)  
+        # in NEMO input, weights and biases are already integers,rescale them back to quantized fp to use forward pass and backward propagation 
+        ctx.save_for_backward(input, weight, bias)  
+        ctx.stride = stride
+        ctx.padding = padding
+        ctx.dilation = dilation
+        ctx.groups = groups                 
+        quant_weight = weight
+        quant_input = input    
+        if bias_:
+            quant_bias = bias
+        else:
+            quant_bias = None
+        #in case of normal padding_mode run approx_conv2d
+        #TODO implement quant case for bias=True. Currently not needed for typical ConvNets
+        #quant descriptors inside class is slower than using quant_nn.Conv2d instead
+                        
+        #if (amax == None):           
+        #    return F.conv2d(input, weight, bias, stride, padding, dilation, groups)
+        #else:
+            
+        #convert weights and biases to int8 (must change if approx_mult bits are higher)
+        #They are already quantized with NEMO and integer, can be on unsigned8 bits as well (inputs)
+        quant_input = quant_input.to(dtype=torch.int16)
+        input_mask = torch.full(quant_input.size(), pow(2,act_bit)-1)
+        input_mask = input_mask.to(dtype=torch.int16)
+        quant_input = quant_input & input_mask
+        quant_weight = quant_weight.to(dtype=torch.int16)
+        weight_mask = torch.full(quant_weight.size(), pow(2,weight_bit)-1)
+        weight_mask = weight_mask.to(dtype=torch.int16)
+        quant_weight = quant_weight & weight_mask
+        #slow temporary version of grouped conv2d using simple conv2d (split+concat)
+        #support only for group = input_dim = outputdim (i.e. mobilenetv2)
+        if groups > 1 : 
+            out=torch.empty(0)
+            for i in range(0,groups):
+                filters = quant_weight[i:(i+1)]                   
+                o =  axx_conv2d_kernel.forward(quant_input[:, i:(i+1)], filters, kernel_size, stride, padding) 
+                out = torch.cat((out, o), dim=1)
+                
+            if bias_:
+                return out + quant_bias.reshape(1,out_channels,1,1)   
+            else: 
+                return out
+        
+        if bias_:               
+            #print("bias_")
+            out = axx_conv2d_kernel.forward(quant_input, quant_weight, kernel_size, stride, padding)                
+            return out + quant_bias.reshape(1,out_channels,1,1)
+        out = axx_conv2d_kernel.forward(quant_input, quant_weight, kernel_size, stride, padding)
+      
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_output):
+
+        input, weight, bias = ctx.saved_variables
+        stride = ctx.stride
+        padding = ctx.padding
+        dilation = ctx.dilation
+        groups = ctx.groups
+        grad_input = grad_weight = grad_bias = None            
+
+        if ctx.needs_input_grad[0]:
+            grad_input = torch.nn.grad.conv2d_input(input.shape, weight, grad_output, stride, padding, dilation, groups)
+        if ctx.needs_input_grad[1]:
+            grad_weight = torch.nn.grad.conv2d_weight(input, weight.shape, grad_output, stride, padding, dilation, groups)
+        if bias is not None and ctx.needs_input_grad[2]:
+            grad_bias = grad_output.sum(dim=(0, 2, 3))
+
+        return grad_input, grad_weight, grad_bias, None, None, None, None, None, None, None, None, None, None, None, None, None, None
+
+
+
 
 class AdaPT_Conv2d(_ConvNd):
     def __init__(
@@ -223,7 +301,9 @@ class AdaPT_Conv2d(_ConvNd):
         # set PyInit_ prefix to comply with the python module name
         self.nemo = nemo
         if self.nemo:
-            self.max_val = 255
+            self.act_bit = 9
+            self.weight_bit = 9
+            self.bias_bit= 9
             self.axx_conv2d_kernel = load(name='PyInit_conv2d_' + self.axx_mult, sources=["./neural_networks/adapt/cpu-kernels-9x9/axx_conv2d.cpp"], extra_cflags=['-DAXX_MULT=' + self.axx_mult + ' -march=native -fopenmp -O3'], extra_ldflags=['-lgomp'], verbose=True)
         else:
             self.max_val = 127
@@ -242,6 +322,11 @@ class AdaPT_Conv2d(_ConvNd):
             self.weight.requires_grad = False
 
     def _conv_forward(self, input: Tensor, weight: Tensor, bias: Optional[Tensor]):
+        if self.nemo:
+            return AdaPT_Conv2d_Function_nemo.apply(input, weight, self.kernel_size, self.out_channels, self.bias_, 
+                                                    self.axx_conv2d_kernel, bias, self.stride, self.padding, 
+                                                    self.dilation, self.groups, self.padding_mode, 
+                                                    self.act_bit, self.weight_bit, self.bias_bit)
         return AdaPT_Conv2d_Function.apply(input, weight, self.kernel_size, self.out_channels, self.bias_,
                                            self.axx_conv2d_kernel, bias, self.stride, self.padding,
                                            self.dilation, self.groups, self.max_val)
