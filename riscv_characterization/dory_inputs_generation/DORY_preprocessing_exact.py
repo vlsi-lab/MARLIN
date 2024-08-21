@@ -11,7 +11,7 @@ import onnx
 import re
 from packaging import version
 import sys
-from riscv_characterization.nemo_training_quantization import utils as my_utils
+from riscv_characterization.nemo_training_quantization import utils as nemo_utils
 
 import argparse
 
@@ -48,11 +48,11 @@ def main():
     model_name = './riscv_characterization/nemo_training_quantization/saved_models_nemo/new_wd_model'
     model.load_state_dict(torch.load( model_name + '.pth')['model_state_dict'], strict=False)
     json_file='./riscv_characterization/nemo_training_quantization/act.json'
-    my_utils.to_nemo_id_model(model, json_file)
+    nemo_utils.to_nemo_id_model(model, json_file)
 
     # read file produced by NSGA2 containing pareto optimal configurations
     # input selection
-    in_t_all = my_utils.select_input(test_data, test_dataloader, device)   #return a list with an input for each classification element
+    in_t_all = nemo_utils.select_input(test_data, test_dataloader, device)   #return a list with an input for each classification element
 
     #name_file, number, dory_folder = sys.argv
     #if (len(sys.argv) < 3):
@@ -72,13 +72,13 @@ def main():
     nemo.utils.export_onnx( onnx_id_name, model, model, (1,28,28),device)
     # use compliant format with respect to DORY parsing order
     onnx_model = onnx.load( onnx_id_name)
-    my_utils.rename_edges_onnx(onnx_model, onnx_id_name)
+    nemo_utils.rename_edges_onnx(onnx_model, onnx_id_name)
     onnx_model = onnx.load(onnx_id_name)
     # write weights and activations values to be used by DORY to check correctness
     #dory_folder  = './dory_inputs_generation/'+ params.dory_folder 
     Path(params.dory_folder).mkdir(parents=True, exist_ok=True)
-    my_utils.write_weights(model, params.dory_folder)
-    my_utils.write_intermidiate_results(model, in_t, params.dory_folder)
+    nemo_utils.write_weights(model, params.dory_folder)
+    nemo_utils.write_intermidiate_results(model, in_t, params.dory_folder)
 
 if __name__ == "__main__":
     main()

@@ -11,7 +11,7 @@ import onnx
 import re
 from packaging import version
 import sys
-from riscv_characterization.nemo_training_quantization import utils as my_utils
+from riscv_characterization.nemo_training_quantization import utils as nemo_utils
 import argparse
 
 """
@@ -52,7 +52,7 @@ def main():
     model_name = './riscv_characterization/nemo_training_quantization/saved_models_nemo/new_wd_model'
     model.load_state_dict(torch.load( model_name + '.pth')['model_state_dict'], strict=False)
     json_file='./riscv_characterization/nemo_training_quantization/act.json'
-    my_utils.to_nemo_id_model(model, json_file)
+    nemo_utils.to_nemo_id_model(model, json_file)
 
     # read file produced by NSGA2 containing pareto optimal configurations
     file_mult_conf = "./riscv_characterization/NSGA2/results_27s_ultra_txt/pareto_conf_80_50_Pc0.8_Pm0.8_seed1_singlepoint.txt"
@@ -115,7 +115,7 @@ def main():
 
     print("Min chromosome:", min_chr, " with accuracy", min_acc)
     # input selection
-    in_t_all = my_utils.select_input(test_data, test_dataloader, device)   # return a list with an input for each classification element
+    in_t_all = nemo_utils.select_input(test_data, test_dataloader, device)   # return a list with an input for each classification element
 
     # Parameters input by the user
     #name_file, number, list_idx, dory_folder = sys.argv
@@ -147,24 +147,24 @@ def main():
     nemo.utils.export_onnx( onnx_id_name, model, model, (1,28,28),device)
     # use compliant format with respect to DORY parsing order
     onnx_model = onnx.load( onnx_id_name)
-    my_utils.rename_edges_onnx(onnx_model, onnx_id_name)
+    nemo_utils.rename_edges_onnx(onnx_model, onnx_id_name)
     onnx_model = onnx.load(onnx_id_name)
     # create approximate dict with chromosome configuration
-    approximation_dict = my_utils.fill_approximation_dict(model, chromosome)
+    approximation_dict = nemo_utils.fill_approximation_dict(model, chromosome)
 
     print(approximation_dict)
     ### save nemo graph in json format
     #dory_folder  = './dory_inputs_generation/'+ dory_folder 
     Path(params.dory_folder).mkdir(parents=True, exist_ok=True)
     json_graph = "dory_deployable_model"
-    NEMO_graph = my_utils.create_nemo_graph(onnx_model, model, precision_std, approximation_dict)
-    my_utils.print_json_from_NEMO_graph(json_graph, params.dory_folder, NEMO_graph)
+    NEMO_graph = nemo_utils.create_nemo_graph(onnx_model, model, precision_std, approximation_dict)
+    nemo_utils.print_json_from_NEMO_graph(json_graph, params.dory_folder, NEMO_graph)
 
     # make the model approximate
-    my_utils.adapt_model(model, NEMO_graph)
+    nemo_utils.adapt_model(model, NEMO_graph)
     # write weigths and activations values to be used by DORY executable to check correctness
-    my_utils.write_weights(model, params.dory_folder)
-    my_utils.write_intermidiate_results(model, in_t, params.dory_folder)
+    nemo_utils.write_weights(model, params.dory_folder)
+    nemo_utils.write_intermidiate_results(model, in_t, params.dory_folder)
 
 if __name__ == "__main__":
     main()
