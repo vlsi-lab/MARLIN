@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 import matplotlib.pyplot as plt
+from neural_networks.MNIST.mnist_net import MNIST_model1
 
 
 # TODO: incorporare in mnist training, controllare la normalizzazione doppia che fa

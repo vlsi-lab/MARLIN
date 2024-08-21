@@ -12,6 +12,7 @@ import re
 from packaging import version
 import sys
 from riscv_characterization.nemo_training_quantization import utils as nemo_utils
+from neural_networks.MNIST.mnist_net import MNIST_model1, precision_std
 import argparse
 
 """

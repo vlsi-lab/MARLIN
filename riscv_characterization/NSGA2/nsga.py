@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 from pathlib import Path
 from neural_networks.utils import get_loaders_split
+from neural_networks.MNIST.mnist_net import MNIST_model1
 import nemo_training_quantization.utils as nemo_utils
 import benchmark_CIFAR10.Utils.GA_utils as GA_utils
 import argparse
