@@ -1,20 +1,27 @@
 import os
 import torch
 from torch import nn
-import riscv_characterization.vendor.nemo 
+import riscv_characterization.vendor.nemo as nemo
+from riscv_characterization.vendor.nemo.quant.pact import *
 import numpy as np
-from Utils.torch_neural_networks_library import *
 import json
 import onnx
 import netron
+import sys
+from pathlib import Path
 from packaging import version
 from riscv_characterization.nemo_training_quantization import NEMO_node
-import sys
-from adapt.approx_layers import axx_layers as approxNN
-from Utils.LUT_convert import generate_mult_LUT
-from pathlib import Path
+from neural_networks.adapt.approx_layers import axx_layers as approxNN
+from approximate_multiplier.LUT_convert import generate_mult_LUT
 
-# TODO: eliminare doppioni, mergiare
+
+activation={}
+def get_activation(name):
+    def hook(model, input, output):
+        activation[name] = output.detach()
+    return hook
+
+
 """
 function to create the approximation dictionary
 
@@ -51,13 +58,13 @@ def fill_approximation_dict(model, chromosome):
     approximation_dict = create_approximation_dict(model)
     idx = 0
     for name, module in model._modules.items():
-        if isinstance (module, nn.Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d) or isinstance (module,approxNN.AdaPT_Conv2d):
+        if isinstance (module, nn.Conv2d) or isinstance(module, PACT_Conv2d) or isinstance (module,approxNN.AdaPT_Conv2d):
             approximation_dict[name]['approx_mul'] = 1
             approximation_dict[name]['approx_mac'] = 1
             approximation_dict[name]['approx_dot8'] = 1
             approximation_dict[name]['mul_conf'] = chromosome[idx]
             idx +=1
-        elif isinstance (module, nn.Linear) or isinstance(module, nemo.quant.pact.PACT_Linear):
+        elif isinstance (module, nn.Linear) or isinstance(module, PACT_Linear):
             approximation_dict[name]['approx_mul'] = 1
             approximation_dict[name]['approx_mac'] = 1
             approximation_dict[name]['approx_dot8'] = 1
@@ -97,8 +104,8 @@ def adapt_model(model, NEMO_graph):
     print("Transforming id model to adapt model")
     ##N.B. !!!!!!!!!!!!weight_bit and act_bit HAVE to correspond to axx_mult values
     for name,module in model._modules.items():
-        #if isinstance(module, nemo.quant.pact.PACT_Conv2d):
-        if isinstance(module, nn.Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d):
+        #if isinstance(module, PACT_Conv2d):
+        if isinstance(module, nn.Conv2d) or isinstance(module, PACT_Conv2d):
             for node in NEMO_graph:
                 if(node.name.find(name)!= -1):
                     print("Found layer", name)
@@ -110,13 +117,13 @@ def adapt_model(model, NEMO_graph):
                     axx_path = Path('./adapt/cpu-kernels/axx_mults/'+ axx_mult +'.h')  
                     if axx_path.is_file() is False:
                         generate_mult_LUT(weight_bit, act_bit, approx)
-                    adapt_layer = approxNN.AdaPT_Conv2d(in_channels = module.in_channels, out_channels=module.out_channels, kernel_size=module.kernel_size, padding=module.padding, stride=module.stride, dilation=module.dilation, groups=module.groups,bias=True if module.bias is not None else False, axx_mult = axx_mult, act_bit=act_bit, weight_bit=weight_bit, bias_bit=bias_bit)
+                    adapt_layer = approxNN.AdaPT_Conv2d(in_channels = module.in_channels, out_channels=module.out_channels, kernel_size=module.kernel_size, padding=module.padding, stride=module.stride, dilation=module.dilation, groups=module.groups,bias=True if module.bias is not None else False, axx_mult = axx_mult, nemo=True)
                     adapt_layer.weight = module.weight
                     adapt_layer.bias = module.bias
                     model._modules[name]= adapt_layer
 
 
-def adapt_model_9x9 (model, chromosome):
+def adapt_model_9x9(model, chromosome):
     """
     Assuming only 9x9 multipliers are used, choose configuration using chromosome
     """
@@ -124,49 +131,21 @@ def adapt_model_9x9 (model, chromosome):
     cnt = 0
     act_bit = 9 
     weight_bit = 9
-    bias_bit = 32
+    #bias_bit = 32
     for name,module in model._modules.items():
-        if isinstance(module, nn.Conv2d) or isinstance(module, nemo.quant.pact.PACT_Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d):
+        if isinstance(module, nn.Conv2d) or isinstance(module, PACT_Conv2d) or isinstance(module, approxNN.AdaPT_Conv2d):
             axx_mult = 'bw_mult_9_9_' + str(int(chromosome[cnt]))    
             print("Found layer", name, "mult:", axx_mult)
-            axx_path = Path('./adapt/cpu-kernels/axx_mults/'+ axx_mult +'.h')  
+            axx_path = Path('./neural_networks/adapt/cpu-kernels-9x9/axx_mults_9x9/'+ axx_mult +'.h')  
             if axx_path.is_file() is False:
                 generate_mult_LUT(weight_bit, act_bit, int(chromosome[cnt]))
             
-            adapt_layer = approxNN.AdaPT_Conv2d(in_channels = module.in_channels, out_channels=module.out_channels, kernel_size=module.kernel_size, padding=module.padding, stride=module.stride, dilation=module.dilation, groups=module.groups,bias=True if module.bias is not None else False, axx_mult = axx_mult, act_bit=act_bit, weight_bit=weight_bit, bias_bit=bias_bit)
+            adapt_layer = approxNN.AdaPT_Conv2d(in_channels = module.in_channels, out_channels=module.out_channels, kernel_size=module.kernel_size, padding=module.padding, stride=module.stride, dilation=module.dilation, groups=module.groups,bias=True if module.bias is not None else False, axx_mult = axx_mult, nemo=True)
             adapt_layer.weight = module.weight
             adapt_layer.bias = module.bias
             model._modules[name]= adapt_layer
             cnt += 1
 
-
-def approximate_model (nemo_model, NEMO_graph):
-    nemo_model.eval()
-    print("Transforming id model to approximate model")
-    for node in NEMO_graph:
-        if (node.op_type == 'Conv'):
-            if(node.approx_mul == 1 or node.approx_mac == 1 or node.approx_dot8 == 1):
-                # node has to be turned into approximate
-                # find the corresponding node in the nemo model and substitute it with its approximate version
-                for name, module in nemo_model._modules.items():     # assume no submodules
-                    if(node.name.find(name)!= -1 ):
-                        print("Found an approximate convolutional layer:", name)
-                        # define new layer
-                        # to determine act_bit, weight, bias_bit and approx we can use Nemo nodes attributes already written
-                        weight_bit = node.weight_bits +2 # due to nemo precision dict format +1, +1 to go to 9 bits 
-                        act_bit = node.input_activation_bits +1 
-                        bias_bit = node.bias_bits
-                        approx = node.mul_conf
-                        approx_layer = ApproxConv2d(in_channels=module.in_channels, out_channels=module.out_channels, kernel_size=module.kernel_size, 
-                                                padding=module.padding, stride=module.stride, dilation=module.dilation, groups=module.groups, 
-                                                act_bit= act_bit, weight_bit=weight_bit, bias_bit=bias_bit, approx=approx)
-                        approx_layer.weight = module.weight         #.detach() #.clone().detach().to('cpu') #è giusto usare il clone?
-                        try:
-                            approx_layer.bias = module.bias         #.detach() #.clone.to('cpu')
-                        except:
-                            approx_layer.bias = None
-                        # perform the substitution in the model
-                        nemo_model._modules[name] = approx_layer
     
 def write_act_parameters(nemo_model, json_file):
     print("Writing activations parameters")
@@ -175,7 +154,7 @@ def write_act_parameters(nemo_model, json_file):
     if json_file is None:
         json_file = './nemo_training_quantization/act.json'
     for name, module in nemo_model._modules.items():     # assume no submodules
-        if isinstance (module, nemo.quant.pact.PACT_IntegerAct):
+        if isinstance (module, PACT_IntegerAct):
             activation_dict[name] = dict()
             activation_dict[name]['eps_in'] = module.eps_in.item()
             activation_dict[name]['eps_out'] = module.eps_out.item()
@@ -195,12 +174,27 @@ def to_nemo_id_model(model, json_file):
         if (isinstance(module, nn.ReLU)):
             print ("Found layer", name)
             try:
-                nemo_act = nemo.quant.pact.PACT_IntegerAct(eps_in=torch.tensor(act_json[name]['eps_in']) ,eps_out= torch.tensor(act_json[name]['eps_out']) , alpha=torch.ones(1))
+                nemo_act = PACT_IntegerAct(eps_in=torch.tensor(act_json[name]['eps_in']) ,eps_out= torch.tensor(act_json[name]['eps_out']) , alpha=torch.ones(1))
                 nemo_act.D = torch.tensor(act_json[name]['D'] )
                 nemo_act.alpha_out = act_json[name]['alpha_out']
                 model._modules[name] = nemo_act
             except:
                 print("layer name not found in json file")
+
+def transform_model(model, model_file, json_file, chromosome):
+    """
+    1. Reload initial fp weights
+    2. Transform to NEMO compatible model (load act scaling factors)
+    3. Transform to adapt model with "chromosome" approx levels
+    """
+    if model_file == None:
+        model_file = "./riscv_characterization/NSGA2/mnist_model.pth" # default name
+    model.load_state_dict(torch.load(model_file)['model_state_dict'], strict=False) 
+    if json_file == None:
+        json_file = './riscv_characterization/act.json'  # choose a default name
+    to_nemo_id_model(model, json_file)
+    adapt_model_9x9(model, chromosome)  # model becomes adapt model
+                
 
 def select_input(test_data,test_dataloader, device):
     classes = test_data.classes
@@ -241,7 +235,7 @@ def write_intermidiate_results(model,in_t, ex_dir):
     i = 0
     # for now get hooks only for act and MaxPool. There could be other cases more complex to add
     for name, module in model._modules.items():
-        if isinstance(module, nemo.quant.pact.PACT_IntegerAct):
+        if isinstance(module, PACT_IntegerAct):
             model._modules[name].register_forward_hook(get_activation(str(name))) 
             act_nodes_idx.append([i, str(name)])
             i+=1
@@ -332,13 +326,13 @@ def write_weights(model, my_dir):
     #model_names = list(model._modules)
     #for i, name in enumerate(model_names):
         #print("name", model._modules[name], name, i)
-        #if isinstance(model._modules[name],nemo.quant.pact.PACT_IntegerAct):
+        #if isinstance(model._modules[name], PACT_IntegerAct):
         #    print (layer.weight)
     model.eval()
     idx = 0
     for layer in model.children():
         #print("layer:", layer)
-        if isinstance(layer, nemo.quant.pact.PACT_Conv2d) or isinstance(layer, nn.Conv2d) or isinstance(layer,approxNN.AdaPT_Conv2d):
+        if isinstance(layer, PACT_Conv2d) or isinstance(layer, nn.Conv2d) or isinstance(layer,approxNN.AdaPT_Conv2d):
             fname = my_dir + "/Conv2d_weights" + str(idx) +".txt"
             f = open(fname, "w")
             mystr = "CHECK L2 weights\n"
@@ -407,9 +401,9 @@ def test(dataloader, model, loss_fn, device, integer = False):
             if (integer == True):
                 X = torch.round(X*255)
                 if (torch.max(X)>255):
-                    print("max",torch.max(X))
+                    ValueError("max",torch.max(X))
                 if torch.min(X)< 0:
-                    print("min", torch.min(X))
+                    ValueError("min", torch.min(X))
             X, y = X.to(device), y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
@@ -417,9 +411,9 @@ def test(dataloader, model, loss_fn, device, integer = False):
     test_loss /= num_batches
     correct /= size
     if (integer == True):
-        print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}% \n")
+        print(f"Accuracy: {(100*correct):>0.1f}% \n")
     else:
-        print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        print(f"Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
     return correct
 
 def print_acc(test_data, test_dataloader, model, device, integer = False):
