@@ -34,7 +34,7 @@ def get_args():
     parser.add_argument('--crossover-probability', default=1.0, type=float, help="Probability of performing a single-point crossover operation on an individual")
     parser.add_argument('--mutation-probability', default=0.3, type=float, help="Probability of gene mutation occurring on an individual")
     parser.add_argument('--axx-levels', default=255, type=int, help="Number of approximation levels supported by the multiplier, or number of LUT corresponding to different multipliers")
-    parser.add_argument('--model-file', default='./riscv_characterization/NSGA2/mnist_model.pth', type=str, help="File storing the original fp model")
+    parser.add_argument('--model-file', default='./riscv_characterization/NSGA2/mnist_model.pth', type=str, help="File storing the trained model, passed through NEMO")
     parser.add_argument('--json-file', default='./riscv_characterization/NSGA2/act.json', type=str, help="File storing the activation scaling factors, taken from NEMO")
     parser.add_argument('--power-file', default='./riscv_characterization/NSGA2/power.txt', type=str, help="File reporting normalized power values for each approx level")
     parser.add_argument('--plot', default=False, type=bool, help="Set to true for plotting results")
