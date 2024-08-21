@@ -25,7 +25,7 @@ Then open a terminal and intall ninja-build
 sudo apt update
 sudo apt install ninja-build
 ```
-Install marlin environment (requires anaconda or miniconda https://www.anaconda.com/download)
+Install marlin environment (requires miniconda or [anaconda](https://www.anaconda.com/download)).
 ```bash
 cd MARLIN
 
@@ -33,20 +33,22 @@ conda env create -f marlin.yml
 ```
 Inside each folder there are README files with additional information useful to install additional components, execute the code and replicate the data. 
 
-In order to use the multiplier LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip at https://www.7-zip.org/download.html
+In order to use the multiplier LUTs and pre-trained neural networks, it is necessary to install 7-zip and extract the files according to the README contained in each folder. You can download 7-zip from [here](https://www.7-zip.org/download.html).
 When launching any python file, remember to keep the folder hierarchy as defined in this repository.
-You can add the folders to the PYTHONPATH with the following command:
+You can add the folders to the PYTHONPATH, after entering the MARLIN repo, with the following command:
 ```bash
-cd MARLIN
 export PYTHONPATH="${PYTHONPATH}:./:./neural_networks:./benchmark_CIFAR10:./approximate_multiplier:./riscv_characterization"
 ```
 
-Support to verify the experimental results obtained on the modified version of PULP Platform is provided. 
+## Run simulation
+Support to verify the experimental results obtained on the modified version of PULP Platform is provided.
+[vendor](https://opentitan.org/book/util/doc/vendor.html#utilvendorpy-vendor-in-components) is used to keep track of dependencies across multiple github repositories.
 Execute the command:
 ```bash
 make build
 ```
-This command will setup the required scripts and repository. Further information on the configuration can be found in the folder `./riscv_characterization`.
+This command will setup the required scripts and repository. Further information on the configuration can be found in the folder `./riscv_characterization`.\
+*Note:* to avoid possible path errors, we highly suggest to launch python scripts from inside `MARLIN` folder directly.
 
 ## Citation
 If you used this code in your work, consider adding a reference to our paper 
