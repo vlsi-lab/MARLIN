@@ -8,13 +8,12 @@ import numpy as np
 from pathlib import Path
 import json
 import onnx
-import netron
 from packaging import version
 from neural_networks.MNIST.mnist_net import MNIST_model1, precision_std
 import nemo_training_quantization.utils as nemo_utils
 
 # model pth to be loaded and quantized
-model_name = "model1_48101624_75333_softmax_nobias_lr3e-3step035_wd1e-3_bs32_ep30_avg0.5"
+model_name = "model1"
 # onnx and json file names to be saved
 #onnx_id_name = "./nemo_training_quantization/onnx/new_wd_model.onnx"
 act_json = "./nemo_training_quantization/act.json"
@@ -83,7 +82,6 @@ nemo_utils.print_acc(test_data, test_dataloader, nemo_model, device, False)
 
 print ("Performing integer deployable transformations")
 nemo_model.id_stage()
-#print(nemo_model)
 _ = nemo_utils.test(test_dataloader, nemo_model, loss_fn, device, integer=True)
 nemo_utils.print_acc(test_data, test_dataloader, nemo_model, device, integer = True)
 
@@ -94,7 +92,7 @@ lr = 3e-3
 wd=1e-3
 Path("./nemo_training_quantization/saved_models_nemo").mkdir(parents=True, exist_ok=True)
 
-PATH = "./nemo_training_quantization/saved_models_nemo/new_wd_model_bias.pth"
+PATH = "./nemo_training_quantization/saved_models_nemo/nemo_mnist_model.pth"
 torch.save({ 'model_state_dict': nemo_model.state_dict(),
             'device': device,
             'train_parameters': {'batch': batch_size, 'epochs': epochs, 'lr': lr, 'wd': wd}

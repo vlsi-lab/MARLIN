@@ -9,11 +9,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from neural_networks.MNIST.mnist_net import MNIST_model1
 
+"""
+Train MNIST_model1 and save pth model to PATH. 
+To have more control on hyperparameters use `neural_networks/MNIST/train_mnist.py`
+"""
 
-# TODO: incorporare in mnist training, controllare la normalizzazione doppia che fa
+# TODO: incorporate in mnist_training
 if __name__ == '__main__':
     # folder where to save relevant info
-    PATH = "./nemo_training_quantization/saved_models/model1_48101624_75333_softmax_bias_lr3e-3step035_wd1e-3_bs32_ep30_avg0.5.pth"
+    PATH = "./nemo_training_quantization/saved_models/model1.pth"
     
     # flag to load a pre-trained model
     load_pretrained = False 
