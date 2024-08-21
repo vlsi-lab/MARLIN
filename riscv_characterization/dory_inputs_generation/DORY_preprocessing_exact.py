@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import transforms
-import riscv_characterization.vendor.nemo
+import riscv_characterization.vendor.nemo as nemo
 import numpy as np
 from pathlib import Path
 import json
@@ -12,17 +12,18 @@ import re
 from packaging import version
 import sys
 from riscv_characterization.nemo_training_quantization import utils as my_utils
-# TODO: where is MNIST_model1()?
+
+import argparse
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--number', default=0, type=int, help="Image class for MNIST dataset: must be a number in the range [0:9].")
-    parser.add_argument('--dory_folder', default="./riscv_characterization/dory_inputs_generation/dory_folder/", type=str, help="String indicating the path where to store results produced.")
+    parser.add_argument('--dory-folder', default="./riscv_characterization/dory_inputs_generation/dory_folder/", type=str, help="String indicating the path where to store results produced.")
     
     return parser.parse_args()
 
 
-def main()
+def main():
     params = get_args()
 
     threads = 12
@@ -44,9 +45,9 @@ def main()
     print(model)
     model.to(device)
 
-    model_name = './nemo_training_quantization/saved_models_nemo/new_wd_model'
+    model_name = './riscv_characterization/nemo_training_quantization/saved_models_nemo/new_wd_model'
     model.load_state_dict(torch.load( model_name + '.pth')['model_state_dict'], strict=False)
-    json_file='./nemo_training_quantization/act.json'
+    json_file='./riscv_characterization/nemo_training_quantization/act.json'
     my_utils.to_nemo_id_model(model, json_file)
 
     # read file produced by NSGA2 containing pareto optimal configurations
@@ -65,8 +66,8 @@ def main()
     in_t = in_t_all[params.number]  #image with label 0
 
     # re-create onnx graph
-    Path('./dory_inputs_generation/onnx').mkdir(parents=True, exist_ok=True)
-    onnx_id_name = './dory_inputs_generation/onnx/prova_main_1.onnx'
+    Path('./riscv_characterization/dory_inputs_generation/onnx').mkdir(parents=True, exist_ok=True)
+    onnx_id_name = './riscv_characterization/dory_inputs_generation/onnx/prova_main_1.onnx'
     # Save and modify onnx model
     nemo.utils.export_onnx( onnx_id_name, model, model, (1,28,28),device)
     # use compliant format with respect to DORY parsing order
